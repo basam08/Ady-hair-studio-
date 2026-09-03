@@ -6,11 +6,14 @@ import { notifyBookingReminder } from "@/lib/notifications";
 export const dynamic = "force-dynamic";
 
 /**
- * Envía recordatorios de las citas que empiezan dentro de la ventana
- * `salon.minLeadHours` y que aún no tienen recordatorio enviado.
+ * Envía recordatorios de las citas aún pendientes de aviso.
  *
- * Protegido con CRON_SECRET (cabecera Authorization: Bearer <secret>).
- * Configura un cron en vercel.json que llame a esta ruta cada 15 min.
+ * En plan Hobby de Vercel el cron solo puede ser diario (vercel.json: 07:00),
+ * así que la ventana cubre desde ahora hasta el final del día. En plan Pro se
+ * puede pasar a un cron cada 15 min y reducir la ventana a las próximas 2 h.
+ *
+ * Vercel añade automáticamente la cabecera Authorization: Bearer <CRON_SECRET>
+ * cuando existe la variable de entorno CRON_SECRET.
  */
 export async function GET(req: NextRequest) {
   const secret = process.env.CRON_SECRET;
@@ -23,7 +26,11 @@ export async function GET(req: NextRequest) {
   }
 
   const now = new Date();
-  const windowEnd = new Date(now.getTime() + 2 * 3_600_000);
+  const windowEnd = new Date();
+  windowEnd.setHours(23, 59, 59, 999);
+  if (windowEnd.getTime() < now.getTime() + 2 * 3_600_000) {
+    windowEnd.setTime(now.getTime() + 2 * 3_600_000);
+  }
 
   const due = await prisma.booking.findMany({
     where: {

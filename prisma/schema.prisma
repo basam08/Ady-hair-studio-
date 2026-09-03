@@ -9,9 +9,11 @@ generator client {
 }
 
 datasource db {
-  // Postgres (Neon) para producción y desarrollo. Ver DEPLOY.md.
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
+  // Postgres (Neon). DATABASE_URL = conexión pooled (app);
+  // DATABASE_URL_UNPOOLED = conexión directa (migraciones / db push).
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DATABASE_URL_UNPOOLED")
 }
 
 model Admin {
