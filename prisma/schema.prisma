@@ -1,0 +1,94 @@
+// Ady Hair Cut — esquema de datos
+// Dev: SQLite. Para producción cambia el provider a "postgresql" o "mysql"
+// y actualiza DATABASE_URL. La lógica de la app no depende del motor.
+
+generator client {
+  provider      = "prisma-client-js"
+  // "native" para tu portátil; el target de Vercel para el despliegue.
+  binaryTargets = ["native", "rhel-openssl-3.0.x"]
+}
+
+datasource db {
+  // Postgres (Neon) para producción y desarrollo. Ver DEPLOY.md.
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Admin {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  passwordHash String
+  name         String
+  createdAt    DateTime @default(now())
+}
+
+model Service {
+  id          String    @id @default(cuid())
+  slug        String    @unique
+  name        String
+  description String
+  priceCents  Int
+  durationMin Int
+  category    String
+  active      Boolean   @default(true)
+  sortOrder   Int       @default(0)
+  bookings    Booking[]
+}
+
+model Client {
+  id        String    @id @default(cuid())
+  name      String
+  phone     String    @unique
+  email     String?
+  notes     String?
+  createdAt DateTime  @default(now())
+  bookings  Booking[]
+}
+
+model Booking {
+  id            String        @id @default(cuid())
+  // Enlace público para que el cliente gestione su cita sin login.
+  manageToken   String        @unique
+  status        BookingStatus @default(CONFIRMED)
+
+  clientId      String
+  client        Client        @relation(fields: [clientId], references: [id])
+
+  serviceId     String
+  service       Service       @relation(fields: [serviceId], references: [id])
+  // Copia inmutable del servicio en el momento de reservar.
+  serviceName   String
+  priceCents    Int
+  durationMin   Int
+
+  startsAt      DateTime
+  endsAt        DateTime
+  chair         Int           @default(1)
+
+  clientNote    String?
+  reminderSentAt DateTime?
+  googleEventId String?
+
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+
+  @@index([startsAt])
+  @@index([status])
+}
+
+model Blackout {
+  id       String   @id @default(cuid())
+  startsAt DateTime
+  endsAt   DateTime
+  reason   String
+  allDay   Boolean  @default(false)
+
+  @@index([startsAt])
+}
+
+enum BookingStatus {
+  CONFIRMED
+  CANCELLED
+  COMPLETED
+  NO_SHOW
+}
