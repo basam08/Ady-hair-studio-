@@ -157,17 +157,28 @@ export default function HomePage() {
       </section>
 
       {/* ── Testimonios ──────────────────────────────────────── */}
-      <section className="mx-auto max-w-6xl px-5 py-16 md:py-24">
-        <p className="u-eyebrow">Reseñas</p>
-        <div className="mt-8 grid gap-10 md:grid-cols-3">
-          {salon.testimonials.map((t) => (
-            <Reveal as="article" key={t.author}>
-              <p className="font-display text-2xl leading-snug">
-                &ldquo;{t.quote}&rdquo;
-              </p>
-              <p className="mt-4 u-eyebrow">{t.author}</p>
-            </Reveal>
-          ))}
+      <section className="border-y border-ink bg-cream py-16 md:py-24">
+        <div className="mx-auto max-w-6xl px-5">
+          <p className="u-eyebrow">Reseñas</p>
+          <h2 className="font-display mt-3 text-4xl md:text-5xl">
+            Lo que dicen nuestros clientes
+          </h2>
+        </div>
+
+        <div className="marquee mt-12">
+          <div className="marquee-track">
+            {[...salon.testimonials, ...salon.testimonials].map((t, i) => (
+              <article
+                key={`${t.author}-${i}`}
+                className="w-[320px] shrink-0 border border-line bg-oat p-6 sm:w-[380px]"
+              >
+                <p className="text-base leading-relaxed text-ink">
+                  &ldquo;{t.quote}&rdquo;
+                </p>
+                <p className="mt-4 u-eyebrow">{t.author}</p>
+              </article>
+            ))}
+          </div>
         </div>
       </section>
 

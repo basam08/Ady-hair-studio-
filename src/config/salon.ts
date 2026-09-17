@@ -540,21 +540,52 @@ export const salon = {
     },
   ] satisfies GalleryItem[],
 
+  // Reseñas reales de clientes (Google). Solo texto, sin foto.
   testimonials: [
     {
       quote:
-        "Escuchan lo que pides y te dicen con sinceridad qué te favorece. Salgo siempre con el corte que quería.",
-      author: "Marta R.",
+        "He estado hoy en la peluquería y quiero dar las gracias a mi peluquero Estiven... me he salido alucinada, han pasado muchos peluqueros/as, llevo 20 años siendo fiel a esa peluquería, y nunca, nunca había salido como hoy. Estiven me ha dejado con las mechas de mi vida. Tiene unas manos y un talento increíble.",
+      author: "Patricia A.",
     },
     {
       quote:
-        "Reservé de madrugada desde el móvil y a los dos días estaba en la silla. El proceso no puede ser más cómodo.",
-      author: "Dani P.",
+        "Fui a probar esta peluquería por la recomendación de una amiga y no pude salir más encantada. Nadia me hizo unas mechas babylight preciosas y un corte de pelo espectacular. Es una gran profesional, con un trato cercano, amable y muy cuidadosa en cada detalle. ¡Muy recomendable!",
+      author: "Cristina Mingo Montalvo",
     },
     {
       quote:
-        "Puntualidad, higiene y un acabado impecable. Se nota el oficio en cada detalle.",
-      author: "Lucía G.",
+        "Servicio muy bueno. Fui con mi madre y Nadia le hizo un corte cortito precioso. Mi madre quedó encantada, dijo que nunca le habían cortado el pelo con tanto esmero y estilo. Fue tratada con mucho cariño y simpatía. Volveremos 100%.",
+      author: "Ana Rosa Casas",
+    },
+    {
+      quote:
+        "Hoy fui a darme unas mechas por primera vez y me ha encantado. El chico súper majo, te asesora muy bien y enseguida sabe lo que quieres.",
+      author: "Rosa",
+    },
+    {
+      quote:
+        "Estuve ayer para corte y peinado. Me atendió Nadia. Quedé encantada. Es muy cercana y te asesora en todo momento. Lo recomiendo.",
+      author: "Ana Peña",
+    },
+    {
+      quote:
+        "Justo hace unos segundos me he ido de la peluquería. Me ha atendido Nadia, me ha hecho el tratamiento de alisado. Han sido las 3,5 horas mejores invertidas del año. Precio muy bueno y resultado que se ve desde el principio. Lo recomiendo mucho.",
+      author: "Sofía Doni",
+    },
+    {
+      quote:
+        "Me encanta. Siempre quedo muy guapa. Muy buen trato, buen corte profesional y buen precio. Siempre dan consejos de lo que va mejor y cómo cuidar el cabello en casa.",
+      author: "Kelly Núñez Tozzi",
+    },
+    {
+      quote:
+        "Buen trato, saben escuchar y recomendar, saben hacer diferentes peinados, tanto clásico como modernos. Buenos precios y sitio muy acogedor, como si estuviera en casa.",
+      author: "David AC",
+    },
+    {
+      quote:
+        "Me he dado el tinte y Nadia me ha aconsejado. He quedado muy contenta, me ha parecido muy profesional y muy amable, sin duda volveré pronto.",
+      author: "Ángeles Velasco",
     },
   ],
 } as const;
