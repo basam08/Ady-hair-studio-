@@ -46,6 +46,7 @@ export async function POST(req: NextRequest) {
   try {
     const booking = await createBooking({
       serviceSlug: parsed.data.serviceSlug,
+      stylistSlug: parsed.data.stylistSlug,
       date: parsed.data.date,
       time: parsed.data.time,
       name: parsed.data.name,
@@ -66,7 +67,11 @@ export async function POST(req: NextRequest) {
   } catch (err) {
     if (err instanceof BookingError) {
       const status =
-        err.code === "SLOT_TAKEN" ? 409 : err.code === "SERVICE_NOT_FOUND" ? 404 : 422;
+        err.code === "SLOT_TAKEN"
+          ? 409
+          : err.code === "SERVICE_NOT_FOUND" || err.code === "STYLIST_NOT_FOUND"
+            ? 404
+            : 422;
       return NextResponse.json(
         { error: { code: err.code, message: err.message } },
         { status },

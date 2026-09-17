@@ -9,7 +9,7 @@ export const metadata: Metadata = {
     "Cortes, color, barba, tratamientos y peinados en Ady Hair Cut. Precios y duración de cada servicio.",
 };
 
-const CATEGORIES = ["Corte", "Barba", "Color", "Tratamiento", "Peinado"] as const;
+const CATEGORIES = ["Mujer", "Hombre", "Niños", "Color", "Tratamiento"] as const;
 
 export default function ServiciosPage() {
   return (
@@ -47,12 +47,25 @@ export default function ServiciosPage() {
                     <p className="u-mono text-xs text-cocoa">
                       {formatDuration(s.durationMin)}
                     </p>
-                    <Link
-                      href={`/reservar?servicio=${s.slug}`}
-                      className="u-mono mt-2 inline-block text-xs uppercase tracking-widest text-persimmon link-underline"
-                    >
-                      Reservar →
-                    </Link>
+                    {s.bookableOnline === false ? (
+                      <a
+                        href={`https://wa.me/${salon.contact.whatsapp}?text=${encodeURIComponent(
+                          `Hola ${salon.name}, quiero pedir cita para ${s.name}.`,
+                        )}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="u-mono mt-2 inline-block text-xs uppercase tracking-widest text-persimmon link-underline"
+                      >
+                        Consultar por WhatsApp →
+                      </a>
+                    ) : (
+                      <Link
+                        href={`/reservar?servicio=${s.slug}`}
+                        className="u-mono mt-2 inline-block text-xs uppercase tracking-widest text-persimmon link-underline"
+                      >
+                        Reservar →
+                      </Link>
+                    )}
                   </div>
                 </Reveal>
               ))}

@@ -28,7 +28,7 @@ export const GET = withAdmin(async (req: NextRequest) => {
           }
         : undefined,
     orderBy: { startsAt: "asc" },
-    include: { client: true },
+    include: { client: true, stylist: { select: { name: true } } },
     take: 5000,
   });
 
@@ -41,7 +41,7 @@ export const GET = withAdmin(async (req: NextRequest) => {
     "Email",
     "Precio (€)",
     "Duración (min)",
-    "Silla",
+    "Peluquero/a",
     "Estado",
     "Nota",
   ];
@@ -56,7 +56,7 @@ export const GET = withAdmin(async (req: NextRequest) => {
       b.client.email ?? "",
       (b.priceCents / 100).toFixed(2),
       b.durationMin,
-      b.chair,
+      b.stylist?.name ?? "Sin asignar",
       b.status,
       b.clientNote ?? "",
     ]

@@ -25,7 +25,7 @@ export interface DashboardStats {
     serviceName: string;
     client: string;
     phone: string;
-    chair: number;
+    stylistName: string;
     status: string;
   }[];
   topServices: { name: string; count: number; revenueCents: number }[];
@@ -40,14 +40,14 @@ export async function getDashboardStats(): Promise<DashboardStats> {
   const in7 = new Date(now.getTime() + 7 * 86_400_000);
   const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
 
-  const [todayBookings, weekBookings, next7Bookings, newClients, byService] =
+  const [todayBookings, weekBookings, next7Bookings, newClients, byService, activeStylists] =
     await Promise.all([
       prisma.booking.findMany({
         where: {
           status: { in: ["CONFIRMED", "COMPLETED"] },
           startsAt: { gte: startOfToday, lt: endOfToday },
         },
-        include: { client: true },
+        include: { client: true, stylist: { select: { name: true } } },
         orderBy: { startsAt: "asc" },
       }),
       prisma.booking.findMany({
@@ -68,6 +68,7 @@ export async function getDashboardStats(): Promise<DashboardStats> {
         _count: { _all: true },
         _sum: { priceCents: true },
       }),
+      prisma.stylist.count({ where: { active: true } }),
     ]);
 
   const dayKeys = new Set<string>();
@@ -77,8 +78,9 @@ export async function getDashboardStats(): Promise<DashboardStats> {
         .dateKey,
     );
   }
+  const capacity = Math.max(1, activeStylists);
   let openMin = 0;
-  for (const key of dayKeys) openMin += openMinutesForDate(key) * salon.chairs;
+  for (const key of dayKeys) openMin += openMinutesForDate(key) * capacity;
   const bookedMin = next7Bookings.reduce((s, b) => s + b.durationMin, 0);
 
   return {
@@ -92,7 +94,7 @@ export async function getDashboardStats(): Promise<DashboardStats> {
       serviceName: b.serviceName,
       client: b.client.name,
       phone: b.client.phone,
-      chair: b.chair,
+      stylistName: b.stylist?.name ?? "Sin asignar",
       status: b.status,
     })),
     topServices: byService

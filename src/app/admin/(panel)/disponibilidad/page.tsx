@@ -11,8 +11,8 @@ export default function DisponibilidadPage() {
       <section className="mt-8">
         <h2 className="u-eyebrow">Horario habitual</h2>
         <p className="mt-2 max-w-lg text-sm text-cocoa">
-          El horario semanal, la capacidad ({salon.chairs} sillas) y los festivos
-          fijos se definen en{" "}
+          El horario semanal, los peluqueros ({salon.stylists.length}) y los
+          festivos fijos se definen en{" "}
           <code className="u-mono">src/config/salon.ts</code>. Para cierres
           puntuales o descansos, usa los bloqueos de abajo.
         </p>

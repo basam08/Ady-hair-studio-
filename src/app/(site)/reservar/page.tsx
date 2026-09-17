@@ -16,18 +16,26 @@ export default async function ReservarPage({
 }) {
   const { servicio } = await searchParams;
 
-  const services = await prisma.service.findMany({
-    where: { active: true },
-    orderBy: { sortOrder: "asc" },
-    select: {
-      slug: true,
-      name: true,
-      description: true,
-      priceCents: true,
-      durationMin: true,
-      category: true,
-    },
-  });
+  const [services, stylists] = await Promise.all([
+    prisma.service.findMany({
+      where: { active: true },
+      orderBy: { sortOrder: "asc" },
+      select: {
+        slug: true,
+        name: true,
+        description: true,
+        priceCents: true,
+        durationMin: true,
+        category: true,
+        bookableOnline: true,
+      },
+    }),
+    prisma.stylist.findMany({
+      where: { active: true },
+      orderBy: { sortOrder: "asc" },
+      select: { slug: true, name: true, role: true },
+    }),
+  ]);
 
   return (
     <div className="mx-auto max-w-3xl px-5 py-16 md:py-24">
@@ -41,7 +49,11 @@ export default async function ReservarPage({
           <code className="u-mono">npm run db:seed</code>.
         </p>
       ) : (
-        <BookingWizard services={services} initialServiceSlug={servicio} />
+        <BookingWizard
+          services={services}
+          stylists={stylists}
+          initialServiceSlug={servicio}
+        />
       )}
     </div>
   );

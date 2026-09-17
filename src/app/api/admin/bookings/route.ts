@@ -28,7 +28,7 @@ export const GET = withAdmin(async (req: NextRequest) => {
   const bookings = await prisma.booking.findMany({
     where,
     orderBy: { startsAt: "asc" },
-    include: { client: true },
+    include: { client: true, stylist: { select: { name: true } } },
     take: 500,
   });
 
@@ -54,6 +54,7 @@ export const POST = withAdmin(async (req: NextRequest) => {
     const booking = await createBooking(
       {
         serviceSlug: parsed.data.serviceSlug,
+        stylistSlug: parsed.data.stylistSlug,
         date: parsed.data.date,
         time: parsed.data.time,
         name: parsed.data.name,

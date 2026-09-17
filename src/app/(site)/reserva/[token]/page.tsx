@@ -20,7 +20,11 @@ export default async function ReservaPage({
 
   const booking = await prisma.booking.findUnique({
     where: { manageToken: token },
-    include: { client: true, service: { select: { slug: true } } },
+    include: {
+      client: true,
+      service: { select: { slug: true } },
+      stylist: { select: { slug: true } },
+    },
   });
 
   if (!booking) notFound();
@@ -39,6 +43,7 @@ export default async function ReservaPage({
       <ManageBooking
         token={token}
         serviceSlug={booking.service.slug}
+        stylistSlug={booking.stylist?.slug ?? null}
         serviceName={booking.serviceName}
         startsAt={booking.startsAt.toISOString()}
         status={booking.status}

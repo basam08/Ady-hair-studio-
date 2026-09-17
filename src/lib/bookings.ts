@@ -3,7 +3,7 @@ import { randomBytes } from "node:crypto";
 import type { Booking } from "@prisma/client";
 import { salon } from "@/config/salon";
 import { prisma } from "@/lib/db";
-import { findFreeChair } from "@/lib/availability";
+import { isStylistSlotFree, isPooledSlotFree } from "@/lib/availability";
 import { zonedWallTimeToUtc } from "@/lib/time";
 import { normalizePhone } from "@/lib/validation";
 import {
@@ -19,6 +19,8 @@ export class BookingError extends Error {
   constructor(
     public code:
       | "SERVICE_NOT_FOUND"
+      | "SERVICE_NOT_BOOKABLE"
+      | "STYLIST_NOT_FOUND"
       | "SLOT_TAKEN"
       | "OUT_OF_HOURS"
       | "TOO_SOON"
@@ -36,6 +38,7 @@ function newToken(): string {
 
 interface CreateInput {
   serviceSlug: string;
+  stylistSlug: string;
   date: string; // YYYY-MM-DD (hora local del negocio)
   time: string; // HH:MM
   name: string;
@@ -53,6 +56,19 @@ export async function createBooking(
   });
   if (!service || !service.active) {
     throw new BookingError("SERVICE_NOT_FOUND", "Servicio no disponible");
+  }
+  if (opts.source === "web" && !service.bookableOnline) {
+    throw new BookingError(
+      "SERVICE_NOT_BOOKABLE",
+      "Este servicio no se puede reservar online, escríbenos por WhatsApp",
+    );
+  }
+
+  const stylist = await prisma.stylist.findUnique({
+    where: { slug: input.stylistSlug },
+  });
+  if (!stylist || !stylist.active) {
+    throw new BookingError("STYLIST_NOT_FOUND", "Peluquero no disponible");
   }
 
   const [year, month, day] = input.date.split("-").map(Number);
@@ -81,8 +97,8 @@ export async function createBooking(
   const email = input.email?.trim() || null;
 
   const booking = await prisma.$transaction(async (tx) => {
-    const chair = await findFreeChair(tx as never, startsAt, endsAt);
-    if (chair === null) {
+    const free = await isStylistSlotFree(tx as never, stylist.id, startsAt, endsAt);
+    if (!free) {
       throw new BookingError("SLOT_TAKEN", "Ese hueco ya no está disponible");
     }
 
@@ -104,9 +120,10 @@ export async function createBooking(
         serviceName: service.name,
         priceCents: service.priceCents,
         durationMin: service.durationMin,
+        stylistId: stylist.id,
         startsAt,
         endsAt,
-        chair,
+        chair: 1,
         clientNote: input.note?.trim() || null,
       },
       include: { client: true },
@@ -186,20 +203,23 @@ export async function rescheduleBookingByToken(
   }
 
   const updated = await prisma.$transaction(async (tx) => {
-    // Libera temporalmente marcando la reserva como movida: se comprueba el
-    // hueco excluyéndola a sí misma.
-    const chair = await findFreeChairExcluding(
-      tx as never,
-      startsAt,
-      endsAt,
-      existing.id,
-    );
-    if (chair === null) {
+    // Se mantiene el mismo peluquero; se comprueba el hueco excluyendo la
+    // reserva actual a sí misma.
+    const free = existing.stylistId
+      ? await isStylistSlotFree(
+          tx as never,
+          existing.stylistId,
+          startsAt,
+          endsAt,
+          existing.id,
+        )
+      : await isPooledSlotFree(tx as never, startsAt, endsAt, existing.id);
+    if (!free) {
       throw new BookingError("SLOT_TAKEN", "Ese hueco ya no está disponible");
     }
     return tx.booking.update({
       where: { id: existing.id },
-      data: { startsAt, endsAt, chair },
+      data: { startsAt, endsAt },
       include: { client: true },
     });
   });
@@ -221,44 +241,3 @@ export async function rescheduleBookingByToken(
   return updated;
 }
 
-async function findFreeChairExcluding(
-  tx: {
-    booking: {
-      findMany: (args: unknown) => Promise<
-        { startsAt: Date; endsAt: Date; chair: number; id: string }[]
-      >;
-    };
-    blackout: {
-      findMany: (args: unknown) => Promise<{ startsAt: Date; endsAt: Date }[]>;
-    };
-  },
-  startsAt: Date,
-  endsAt: Date,
-  excludeId: string,
-): Promise<number | null> {
-  const turnaround = salon.turnaroundMin * 60_000;
-  const paddedStart = new Date(startsAt.getTime() - turnaround);
-  const paddedEnd = new Date(endsAt.getTime() + turnaround);
-
-  const blackouts = await tx.blackout.findMany({
-    where: { startsAt: { lt: endsAt }, endsAt: { gt: startsAt } },
-    select: { startsAt: true, endsAt: true },
-  } as never);
-  if (blackouts.length > 0) return null;
-
-  const conflicts = await tx.booking.findMany({
-    where: {
-      status: "CONFIRMED",
-      id: { not: excludeId },
-      startsAt: { lt: paddedEnd },
-      endsAt: { gt: paddedStart },
-    },
-    select: { startsAt: true, endsAt: true, chair: true, id: true },
-  } as never);
-
-  const taken = new Set(conflicts.map((c) => c.chair));
-  for (let chair = 1; chair <= salon.chairs; chair++) {
-    if (!taken.has(chair)) return chair;
-  }
-  return null;
-}

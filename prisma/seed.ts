@@ -20,6 +20,7 @@ async function main() {
 
   // ── Servicios (desde src/config/salon.ts) ─────────────────────
   for (const [i, s] of salon.services.entries()) {
+    const bookableOnline = s.bookableOnline ?? true;
     await prisma.service.upsert({
       where: { slug: s.slug },
       create: {
@@ -29,6 +30,7 @@ async function main() {
         priceCents: Math.round(s.price * 100),
         durationMin: s.durationMin,
         category: s.category,
+        bookableOnline,
         sortOrder: i,
       },
       update: {
@@ -37,17 +39,29 @@ async function main() {
         priceCents: Math.round(s.price * 100),
         durationMin: s.durationMin,
         category: s.category,
+        bookableOnline,
         sortOrder: i,
       },
     });
   }
   console.log(`✔ ${salon.services.length} servicios`);
 
+  // ── Peluqueros (desde src/config/salon.ts) ─────────────────────
+  for (const [i, st] of salon.stylists.entries()) {
+    await prisma.stylist.upsert({
+      where: { slug: st.slug },
+      create: { slug: st.slug, name: st.name, role: st.role, sortOrder: i },
+      update: { name: st.name, role: st.role, sortOrder: i },
+    });
+  }
+  console.log(`✔ ${salon.stylists.length} peluqueros`);
+
   // ── Reservas de ejemplo (solo si no hay ninguna) ──────────────
   const count = await prisma.booking.count();
   if (count === 0) {
     const services = await prisma.service.findMany();
     const bySlug = new Map(services.map((s) => [s.slug, s]));
+    const stylists = await prisma.stylist.findMany();
     const demoClients = [
       { name: "María López", phone: "+34611223344", email: "maria@example.com" },
       { name: "Carlos Ruiz", phone: "+34622334455", email: null },
@@ -76,6 +90,8 @@ async function main() {
           update: {},
         });
 
+        const stylist = stylists[ci % stylists.length];
+
         await prisma.booking.create({
           data: {
             manageToken: randomBytes(24).toString("base64url"),
@@ -84,9 +100,10 @@ async function main() {
             serviceName: svc.name,
             priceCents: svc.priceCents,
             durationMin: svc.durationMin,
+            stylistId: stylist?.id,
             startsAt: start,
             endsAt: end,
-            chair: 1 + (ci % salon.chairs),
+            chair: 1,
           },
         });
         made++;

@@ -2,7 +2,7 @@ import Link from "next/link";
 import { salon, hoursSummary } from "@/config/salon";
 
 export function SiteFooter() {
-  const { address, phone, email, social } = salon.contact;
+  const { address, phone, email, whatsapp, whatsappDisplay, social } = salon.contact;
   return (
     <footer className="border-t border-ink bg-ink text-oat">
       <div className="mx-auto grid max-w-6xl gap-10 px-5 py-14 md:grid-cols-4">
@@ -36,6 +36,16 @@ export function SiteFooter() {
             <li>
               <a href={`mailto:${email}`} className="link-underline">
                 {email}
+              </a>
+            </li>
+            <li>
+              <a
+                href={`https://wa.me/${whatsapp}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="link-underline"
+              >
+                WhatsApp: {whatsappDisplay}
               </a>
             </li>
             <li className="flex gap-4 pt-2 u-mono text-xs uppercase tracking-widest">

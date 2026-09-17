@@ -16,6 +16,13 @@ interface ServiceItem {
   priceCents: number;
   durationMin: number;
   category: string;
+  bookableOnline: boolean;
+}
+
+interface StylistItem {
+  slug: string;
+  name: string;
+  role: string;
 }
 
 interface Slot {
@@ -46,9 +53,11 @@ function isSelectableDay(d: Date, today: Date, maxDate: Date): boolean {
 
 export function BookingWizard({
   services,
+  stylists,
   initialServiceSlug,
 }: {
   services: ServiceItem[];
+  stylists: StylistItem[];
   initialServiceSlug?: string;
 }) {
   const [step, setStep] = useState(1);
@@ -56,6 +65,10 @@ export function BookingWizard({
     initialServiceSlug && services.some((s) => s.slug === initialServiceSlug)
       ? initialServiceSlug
       : null,
+  );
+  const [stylistSlug, setStylistSlug] = useState<string | null>(null);
+  const [whatsAppService, setWhatsAppService] = useState<ServiceItem | null>(
+    null,
   );
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
   const [slot, setSlot] = useState<Slot | null>(null);
@@ -75,11 +88,16 @@ export function BookingWizard({
     token: string;
     startsAt: string;
     serviceName: string;
+    stylistName: string;
   } | null>(null);
 
   const service = useMemo(
     () => services.find((s) => s.slug === serviceSlug) ?? null,
     [services, serviceSlug],
+  );
+  const stylist = useMemo(
+    () => stylists.find((s) => s.slug === stylistSlug) ?? null,
+    [stylists, stylistSlug],
   );
 
   const grouped = useMemo(() => {
@@ -124,9 +142,9 @@ export function BookingWizard({
     return cells;
   }, [viewMonth]);
 
-  // Cargar huecos cuando hay servicio + fecha
+  // Cargar huecos cuando hay servicio + peluquero + fecha
   useEffect(() => {
-    if (!serviceSlug || !selectedDate) return;
+    if (!serviceSlug || !stylistSlug || !selectedDate) return;
     let cancelled = false;
     setLoadingSlots(true);
     setSlots([]);
@@ -134,7 +152,7 @@ export function BookingWizard({
     fetch(
       `/api/availability?service=${encodeURIComponent(
         serviceSlug,
-      )}&date=${selectedDate}`,
+      )}&stylist=${encodeURIComponent(stylistSlug)}&date=${selectedDate}`,
     )
       .then((r) => r.json())
       .then((data) => {
@@ -145,10 +163,28 @@ export function BookingWizard({
     return () => {
       cancelled = true;
     };
-  }, [serviceSlug, selectedDate]);
+  }, [serviceSlug, stylistSlug, selectedDate]);
+
+  function chooseService(s: ServiceItem) {
+    if (!s.bookableOnline) {
+      setWhatsAppService(s);
+      return;
+    }
+    setWhatsAppService(null);
+    setServiceSlug(s.slug);
+    setStylistSlug(null);
+    setSlot(null);
+    setStep(2);
+  }
+
+  function chooseStylist(s: StylistItem) {
+    setStylistSlug(s.slug);
+    setSlot(null);
+    setStep(3);
+  }
 
   async function submit() {
-    if (!service || !selectedDate || !slot) return;
+    if (!service || !stylist || !selectedDate || !slot) return;
     setSubmitting(true);
     setError(null);
     try {
@@ -157,6 +193,7 @@ export function BookingWizard({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           serviceSlug: service.slug,
+          stylistSlug: stylist.slug,
           date: selectedDate,
           time: slot.time,
           name: form.name,
@@ -170,7 +207,7 @@ export function BookingWizard({
       if (!res.ok) {
         setError(data?.error?.message ?? "No se pudo completar la reserva.");
         if (data?.error?.code === "SLOT_TAKEN") {
-          setStep(3);
+          setStep(4);
           setSelectedDate((d) => d); // fuerza recarga de huecos
         }
         return;
@@ -179,6 +216,7 @@ export function BookingWizard({
         token: data.manageToken,
         startsAt: data.startsAt,
         serviceName: data.serviceName,
+        stylistName: stylist.name,
       });
     } catch {
       setError("Error de conexión. Inténtalo de nuevo.");
@@ -200,7 +238,8 @@ export function BookingWizard({
         <p className="u-eyebrow text-persimmon">Cita confirmada</p>
         <h2 className="font-display mt-4 text-4xl">Nos vemos pronto</h2>
         <p className="mt-4 text-cocoa">
-          {confirmation.serviceName} · <span className="u-mono">{when}</span>
+          {confirmation.serviceName} con {confirmation.stylistName} ·{" "}
+          <span className="u-mono">{when}</span>
         </p>
         <p className="mt-2 text-sm text-cocoa">
           Te hemos enviado la confirmación por WhatsApp
@@ -225,33 +264,35 @@ export function BookingWizard({
   return (
     <div>
       {/* Pasos */}
-      <ol className="mb-10 grid grid-cols-4 gap-px border border-line bg-line">
-        {["Servicio", "Fecha", "Hora", "Datos"].map((label, i) => {
-          const n = i + 1;
-          const active = step === n;
-          const done = step > n;
-          return (
-            <li
-              key={label}
-              className={`bg-oat px-3 py-3 ${active ? "bg-cream" : ""}`}
-            >
-              <span
-                className={`u-mono text-xs ${
-                  active ? "text-persimmon" : done ? "text-ink" : "text-cocoa"
-                }`}
+      <ol className="mb-10 grid grid-cols-5 gap-px border border-line bg-line">
+        {["Servicio", "Peluquero", "Fecha", "Hora", "Datos"].map(
+          (label, i) => {
+            const n = i + 1;
+            const active = step === n;
+            const done = step > n;
+            return (
+              <li
+                key={label}
+                className={`bg-oat px-3 py-3 ${active ? "bg-cream" : ""}`}
               >
-                {String(n).padStart(2, "0")}
-              </span>
-              <p
-                className={`mt-1 text-sm ${
-                  active ? "text-ink" : "text-cocoa"
-                }`}
-              >
-                {label}
-              </p>
-            </li>
-          );
-        })}
+                <span
+                  className={`u-mono text-xs ${
+                    active ? "text-persimmon" : done ? "text-ink" : "text-cocoa"
+                  }`}
+                >
+                  {String(n).padStart(2, "0")}
+                </span>
+                <p
+                  className={`mt-1 text-sm ${
+                    active ? "text-ink" : "text-cocoa"
+                  }`}
+                >
+                  {label}
+                </p>
+              </li>
+            );
+          },
+        )}
       </ol>
 
       {error && (
@@ -274,11 +315,7 @@ export function BookingWizard({
                   <button
                     key={s.slug}
                     type="button"
-                    onClick={() => {
-                      setServiceSlug(s.slug);
-                      setSlot(null);
-                      setStep(2);
-                    }}
+                    onClick={() => chooseService(s)}
                     className={`bg-oat p-5 text-left transition-colors hover:bg-cream ${
                       serviceSlug === s.slug ? "bg-cream" : ""
                     }`}
@@ -291,23 +328,74 @@ export function BookingWizard({
                     </div>
                     <p className="mt-1 text-sm text-cocoa">{s.description}</p>
                     <p className="u-mono mt-2 text-xs text-cocoa">
-                      {formatDuration(s.durationMin)}
+                      {s.bookableOnline
+                        ? formatDuration(s.durationMin)
+                        : "Consulta previa por WhatsApp"}
                     </p>
                   </button>
                 ))}
               </div>
             </fieldset>
           ))}
+
+          {whatsAppService && (
+            <div className="mt-2 border border-ink bg-cream p-5">
+              <p className="font-display text-xl">
+                {whatsAppService.name} no se reserva online
+              </p>
+              <p className="mt-2 text-sm text-cocoa">
+                Este servicio necesita valorar tu pelo antes de dar hora.
+                Escríbenos por WhatsApp y te lo organizamos.
+              </p>
+              <a
+                href={`https://wa.me/${salon.contact.whatsapp}?text=${encodeURIComponent(
+                  `Hola ${salon.name}, quiero pedir cita para ${whatsAppService.name}.`,
+                )}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="btn btn-primary mt-4"
+              >
+                Escribir por WhatsApp
+              </a>
+            </div>
+          )}
         </div>
       )}
 
-      {/* Paso 2: fecha */}
+      {/* Paso 2: peluquero */}
       {step === 2 && service && (
         <div>
-          <SelectedService
-            service={service}
-            onChange={() => setStep(1)}
-          />
+          <SelectedService service={service} onChange={() => setStep(1)} />
+          <div className="mt-6 grid gap-px border border-line bg-line sm:grid-cols-3">
+            {stylists.map((s) => (
+              <button
+                key={s.slug}
+                type="button"
+                onClick={() => chooseStylist(s)}
+                className={`bg-oat p-5 text-left transition-colors hover:bg-cream ${
+                  stylistSlug === s.slug ? "bg-cream" : ""
+                }`}
+              >
+                <span className="font-display text-xl">{s.name}</span>
+                <p className="mt-1 text-sm text-cocoa">{s.role}</p>
+              </button>
+            ))}
+          </div>
+          <button
+            type="button"
+            className="btn btn-ghost mt-8"
+            onClick={() => setStep(1)}
+          >
+            ← Cambiar servicio
+          </button>
+        </div>
+      )}
+
+      {/* Paso 3: fecha */}
+      {step === 3 && service && stylist && (
+        <div>
+          <SelectedService service={service} onChange={() => setStep(1)} />
+          <SelectedStylist stylist={stylist} onChange={() => setStep(2)} />
           <div className="mt-6 max-w-sm">
             <div className="flex items-center justify-between">
               <button
@@ -366,7 +454,7 @@ export function BookingWizard({
                     disabled={!selectable}
                     onClick={() => {
                       setSelectedDate(key);
-                      setStep(3);
+                      setStep(4);
                     }}
                     className={`aspect-square u-mono text-sm transition-colors ${
                       isSelected
@@ -385,17 +473,18 @@ export function BookingWizard({
           <button
             type="button"
             className="btn btn-ghost mt-8"
-            onClick={() => setStep(1)}
+            onClick={() => setStep(2)}
           >
-            ← Cambiar servicio
+            ← Cambiar peluquero
           </button>
         </div>
       )}
 
-      {/* Paso 3: hora */}
-      {step === 3 && service && selectedDate && (
+      {/* Paso 4: hora */}
+      {step === 4 && service && stylist && selectedDate && (
         <div>
           <SelectedService service={service} onChange={() => setStep(1)} />
+          <SelectedStylist stylist={stylist} onChange={() => setStep(2)} />
           <p className="u-mono mt-4 text-sm">
             {new Date(selectedDate + "T12:00:00").toLocaleDateString("es-ES", {
               weekday: "long",
@@ -408,7 +497,8 @@ export function BookingWizard({
             <p className="mt-6 text-sm text-cocoa">Buscando huecos…</p>
           ) : slots.length === 0 ? (
             <p className="mt-6 text-sm text-cocoa">
-              No quedan huecos ese día. Prueba con otra fecha.
+              No quedan huecos ese día con {stylist.name}. Prueba con otra
+              fecha o cambia de peluquero.
             </p>
           ) : (
             <div className="mt-6 grid grid-cols-3 gap-2 sm:grid-cols-5">
@@ -418,7 +508,7 @@ export function BookingWizard({
                   type="button"
                   onClick={() => {
                     setSlot(s);
-                    setStep(4);
+                    setStep(5);
                   }}
                   className={`u-mono border border-line py-2 text-sm transition-colors hover:bg-ink hover:text-oat ${
                     slot?.startsAt === s.startsAt
@@ -435,15 +525,15 @@ export function BookingWizard({
           <button
             type="button"
             className="btn btn-ghost mt-8"
-            onClick={() => setStep(2)}
+            onClick={() => setStep(3)}
           >
             ← Cambiar fecha
           </button>
         </div>
       )}
 
-      {/* Paso 4: datos */}
-      {step === 4 && service && selectedDate && slot && (
+      {/* Paso 5: datos */}
+      {step === 5 && service && stylist && selectedDate && slot && (
         <form
           onSubmit={(e) => {
             e.preventDefault();
@@ -453,6 +543,7 @@ export function BookingWizard({
           <div className="border border-line bg-cream p-5">
             <p className="font-display text-xl">{service.name}</p>
             <p className="u-mono mt-1 text-sm text-cocoa">
+              Con {stylist.name} ·{" "}
               {new Date(slot.startsAt).toLocaleString("es-ES", {
                 weekday: "long",
                 day: "numeric",
@@ -538,7 +629,7 @@ export function BookingWizard({
             <button
               type="button"
               className="btn btn-ghost"
-              onClick={() => setStep(3)}
+              onClick={() => setStep(4)}
             >
               ← Cambiar hora
             </button>
@@ -562,6 +653,27 @@ function SelectedService({
         {service.name} · {formatPriceCents(service.priceCents)} ·{" "}
         {formatDuration(service.durationMin)}
       </span>
+      <button
+        type="button"
+        onClick={onChange}
+        className="u-mono text-xs uppercase tracking-widest link-underline"
+      >
+        Cambiar
+      </button>
+    </div>
+  );
+}
+
+function SelectedStylist({
+  stylist,
+  onChange,
+}: {
+  stylist: StylistItem;
+  onChange: () => void;
+}) {
+  return (
+    <div className="mt-2 flex items-center justify-between border border-line bg-cream px-4 py-3">
+      <span className="u-mono text-sm">Con {stylist.name}</span>
       <button
         type="button"
         onClick={onChange}

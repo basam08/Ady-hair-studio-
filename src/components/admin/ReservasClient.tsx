@@ -10,10 +10,10 @@ interface Booking {
   priceCents: number;
   durationMin: number;
   startsAt: string;
-  chair: number;
   status: string;
   clientNote: string | null;
   client: { name: string; phone: string; email: string | null };
+  stylist: { name: string } | null;
 }
 
 type RangePreset = "today" | "week" | "month";
@@ -47,8 +47,10 @@ const STATUS_LABEL: Record<string, string> = {
 
 export function ReservasClient({
   services,
+  stylists,
 }: {
   services: { slug: string; name: string }[];
+  stylists: { slug: string; name: string }[];
 }) {
   const [preset, setPreset] = useState<RangePreset>("week");
   const [status, setStatus] = useState("ALL");
@@ -104,6 +106,7 @@ export function ReservasClient({
       {showNew && (
         <NewBookingForm
           services={services}
+          stylists={stylists}
           onCreated={() => {
             setShowNew(false);
             load();
@@ -176,7 +179,7 @@ export function ReservasClient({
                       </span>
                       <br />
                       <span className="u-mono text-xs text-cocoa">
-                        silla {b.chair} · {b.durationMin} min
+                        {b.stylist?.name ?? "Sin asignar"} · {b.durationMin} min
                       </span>
                     </td>
                     <td className="border-b border-line py-3 pr-3">
@@ -260,13 +263,16 @@ export function ReservasClient({
 
 function NewBookingForm({
   services,
+  stylists,
   onCreated,
 }: {
   services: { slug: string; name: string }[];
+  stylists: { slug: string; name: string }[];
   onCreated: () => void;
 }) {
   const [form, setForm] = useState({
     serviceSlug: services[0]?.slug ?? "",
+    stylistSlug: stylists[0]?.slug ?? "",
     date: "",
     time: "",
     name: "",
@@ -320,6 +326,20 @@ function NewBookingForm({
           onChange={(e) => setForm({ ...form, serviceSlug: e.target.value })}
         >
           {services.map((s) => (
+            <option key={s.slug} value={s.slug}>
+              {s.name}
+            </option>
+          ))}
+        </select>
+      </label>
+      <label className="block">
+        <span className="field-label">Peluquero/a</span>
+        <select
+          className="field"
+          value={form.stylistSlug}
+          onChange={(e) => setForm({ ...form, stylistSlug: e.target.value })}
+        >
+          {stylists.map((s) => (
             <option key={s.slug} value={s.slug}>
               {s.name}
             </option>

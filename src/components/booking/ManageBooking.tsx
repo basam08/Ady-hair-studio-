@@ -7,6 +7,7 @@ import { salon, type WeekDay } from "@/config/salon";
 interface Props {
   token: string;
   serviceSlug: string;
+  stylistSlug: string | null;
   serviceName: string;
   startsAt: string;
   status: string;
@@ -22,6 +23,7 @@ function dateKey(d: Date): string {
 export function ManageBooking({
   token,
   serviceSlug,
+  stylistSlug,
   serviceName,
   startsAt,
   status: initialStatus,
@@ -57,11 +59,16 @@ export function ManageBooking({
     if (!date) return;
     setSlots([]);
     setTime("");
-    fetch(`/api/availability?service=${encodeURIComponent(serviceSlug)}&date=${date}`)
+    const stylistParam = stylistSlug
+      ? `&stylist=${encodeURIComponent(stylistSlug)}`
+      : "";
+    fetch(
+      `/api/availability?service=${encodeURIComponent(serviceSlug)}${stylistParam}&date=${date}`,
+    )
       .then((r) => r.json())
       .then((d) => setSlots(d.slots ?? []))
       .catch(() => setSlots([]));
-  }, [date, serviceSlug]);
+  }, [date, serviceSlug, stylistSlug]);
 
   async function cancel() {
     if (!confirm("¿Seguro que quieres cancelar la cita?")) return;

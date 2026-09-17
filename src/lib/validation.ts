@@ -11,6 +11,7 @@ const phoneSchema = z
 
 export const bookingCreateSchema = z.object({
   serviceSlug: z.string().trim().min(1).max(64),
+  stylistSlug: z.string().trim().min(1).max(64),
   date: z
     .string()
     .refine(isValidDateKey, "Fecha no válida (usa AAAA-MM-DD)"),
@@ -45,6 +46,7 @@ export const bookingManageSchema = z.object({
 
 export const availabilityQuerySchema = z.object({
   service: z.string().trim().min(1).max(64),
+  stylist: z.string().trim().min(1).max(64).optional(),
   date: z.string().refine(isValidDateKey, "Fecha no válida"),
 });
 
@@ -71,6 +73,7 @@ export const bookingStatusSchema = z.object({
 
 export const adminBookingCreateSchema = z.object({
   serviceSlug: z.string().trim().min(1).max(64),
+  stylistSlug: z.string().trim().min(1).max(64),
   date: z.string().refine(isValidDateKey),
   time: z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/),
   name: z.string().trim().min(2).max(80),

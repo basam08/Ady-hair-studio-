@@ -26,7 +26,19 @@ export interface ServiceDef {
   price: number;
   /** Duración en minutos — define cuánto ocupa la agenda */
   durationMin: number;
-  category: "Corte" | "Color" | "Barba" | "Tratamiento" | "Peinado";
+  category: "Mujer" | "Hombre" | "Niños" | "Color" | "Tratamiento";
+  /**
+   * Si es false, el servicio no se puede reservar desde la web (p. ej.
+   * mechas, que requieren valorar el pelo antes). El cliente debe escribir
+   * por WhatsApp y se reserva a mano desde el panel.
+   */
+  bookableOnline?: boolean;
+}
+
+export interface StylistDef {
+  slug: string;
+  name: string;
+  role: string;
 }
 
 export interface GalleryItem {
@@ -43,9 +55,10 @@ export const salon = {
   founded: 2016,
 
   contact: {
-    phone: "+34 655 40 21 88",
+    phone: "+34 917 50 75 60",
     // Número en formato internacional sin signos, para el enlace de WhatsApp.
-    whatsapp: "34655402188",
+    whatsapp: "34640747627",
+    whatsappDisplay: "+34 640 74 76 27",
     email: "hola@adyhaircut.com",
     address: {
       street: "Carrer de la Tisora, 14, bajo",
@@ -66,14 +79,23 @@ export const salon = {
     },
   },
 
-  /** Capacidad simultánea: nº de sillas / profesionales atendiendo a la vez. */
-  chairs: 2,
+  /**
+   * Peluqueros entre los que puede elegir el cliente al reservar. Cada uno
+   * tiene su propia agenda: si uno está ocupado a una hora, no bloquea a
+   * los demás.
+   */
+  stylists: [
+    { slug: "ady", name: "Ady", role: "Titular del salón" },
+    { slug: "carlos", name: "Carlos", role: "Estilista" },
+    { slug: "mila", name: "Mila", role: "Estilista" },
+  ] satisfies StylistDef[],
 
   /**
-   * Cuánto se tarda como mínimo en pasar de un cliente al siguiente en la
-   * misma silla (limpieza, preparación). Se suma a la duración del servicio.
+   * Cuánto se tarda como mínimo en pasar de un cliente al siguiente con el
+   * mismo peluquero (limpieza, preparación). Se suma a la duración del
+   * servicio.
    */
-  turnaroundMin: 10,
+  turnaroundMin: 0,
 
   /** Granularidad de los huecos ofrecidos al cliente, en minutos. */
   slotStepMin: 15,
@@ -92,12 +114,12 @@ export const salon = {
    * para comer). Un array vacío = cerrado ese día.
    */
   hours: {
-    1: [{ open: "10:00", close: "14:00" }, { open: "16:00", close: "20:00" }], // lunes
-    2: [{ open: "10:00", close: "14:00" }, { open: "16:00", close: "20:00" }],
-    3: [{ open: "10:00", close: "14:00" }, { open: "16:00", close: "20:00" }],
-    4: [{ open: "10:00", close: "20:00" }], // jueves jornada continua
+    1: [], // lunes cerrado
+    2: [{ open: "10:00", close: "20:00" }],
+    3: [{ open: "10:00", close: "20:00" }],
+    4: [{ open: "10:00", close: "20:00" }],
     5: [{ open: "10:00", close: "20:00" }],
-    6: [{ open: "09:30", close: "14:30" }], // sábado
+    6: [{ open: "10:00", close: "14:00" }], // sábado
     0: [], // domingo cerrado
   } as Record<WeekDay, OpeningBlock[]>,
 
@@ -117,63 +139,15 @@ export const salon = {
   ] as readonly string[],
 
   services: [
+    // ── Mujer ──────────────────────────────────────────────────────
     {
       slug: "corte-mujer",
       name: "Corte mujer",
       description:
         "Lavado, corte personalizado y peinado. Asesoramiento de forma según tu tipo de cara y textura.",
-      price: 24,
+      price: 22,
       durationMin: 60,
-      category: "Corte",
-    },
-    {
-      slug: "corte-hombre",
-      name: "Corte hombre",
-      description: "Corte a tijera o máquina, perfilado y acabado. Lavado incluido.",
-      price: 16,
-      durationMin: 30,
-      category: "Corte",
-    },
-    {
-      slug: "corte-nino",
-      name: "Corte infantil",
-      description: "Para peques de hasta 12 años. Con paciencia y sin prisas.",
-      price: 13,
-      durationMin: 30,
-      category: "Corte",
-    },
-    {
-      slug: "arreglo-barba",
-      name: "Arreglo de barba",
-      description: "Perfilado con navaja, toalla caliente y aceite. Se puede combinar con corte.",
-      price: 12,
-      durationMin: 30,
-      category: "Barba",
-    },
-    {
-      slug: "color-raiz",
-      name: "Color raíz",
-      description: "Retoque de color en raíz con tinte sin amoníaco. Incluye lavado y secado.",
-      price: 32,
-      durationMin: 75,
-      category: "Color",
-    },
-    {
-      slug: "mechas-balayage",
-      name: "Mechas / Balayage",
-      description:
-        "Técnica de aclarado a mano alzada para un degradado natural. Incluye matiz y tratamiento.",
-      price: 68,
-      durationMin: 150,
-      category: "Color",
-    },
-    {
-      slug: "tratamiento-hidratacion",
-      name: "Tratamiento de hidratación",
-      description: "Mascarilla profesional con masaje de cuero cabelludo. Cabello con brillo real.",
-      price: 18,
-      durationMin: 30,
-      category: "Tratamiento",
+      category: "Mujer",
     },
     {
       slug: "peinado-evento",
@@ -181,7 +155,89 @@ export const salon = {
       description: "Recogido o peinado para boda, comunión o fiesta. Prueba previa opcional.",
       price: 35,
       durationMin: 60,
-      category: "Peinado",
+      category: "Mujer",
+    },
+
+    // ── Hombre ─────────────────────────────────────────────────────
+    {
+      slug: "corte-hombre",
+      name: "Corte hombre",
+      description: "Corte a tijera, perfilado y acabado. Lavado incluido.",
+      price: 17,
+      durationMin: 30,
+      category: "Hombre",
+    },
+    {
+      slug: "corte-maquina",
+      name: "Corte a máquina",
+      description: "Corte completo a máquina, perfilado incluido.",
+      price: 15,
+      durationMin: 30,
+      category: "Hombre",
+    },
+    {
+      slug: "arreglo-barba",
+      name: "Barba",
+      description: "Perfilado con navaja, toalla caliente y aceite. Se puede combinar con corte.",
+      price: 10,
+      durationMin: 20,
+      category: "Hombre",
+    },
+    {
+      slug: "color-hombre",
+      name: "Color",
+      description: "Coloración para cabello corto masculino. Incluye lavado y secado.",
+      price: 20,
+      durationMin: 60,
+      category: "Hombre",
+    },
+
+    // ── Niños ──────────────────────────────────────────────────────
+    {
+      slug: "corte-nina",
+      name: "Corte niña",
+      description: "Para peques de hasta 12 años. Con paciencia y sin prisas.",
+      price: 15,
+      durationMin: 30,
+      category: "Niños",
+    },
+    {
+      slug: "corte-nino",
+      name: "Corte niño",
+      description: "Para peques de hasta 12 años. Con paciencia y sin prisas.",
+      price: 12,
+      durationMin: 30,
+      category: "Niños",
+    },
+
+    // ── Color ──────────────────────────────────────────────────────
+    {
+      slug: "color-raiz",
+      name: "Color raíz",
+      description: "Retoque de color en raíz con tinte sin amoníaco. Incluye lavado y secado.",
+      price: 32,
+      durationMin: 60,
+      category: "Color",
+    },
+    {
+      slug: "mechas-balayage",
+      name: "Mechas / Balayage",
+      description:
+        "Técnica de aclarado a mano alzada para un degradado natural. Incluye matiz y tratamiento. Requiere valorar el pelo antes: escríbenos por WhatsApp para reservarlo.",
+      price: 68,
+      durationMin: 150,
+      category: "Color",
+      bookableOnline: false,
+    },
+
+    // ── Tratamiento ────────────────────────────────────────────────
+    {
+      slug: "tratamiento-hidratacion",
+      name: "Tratamiento de hidratación",
+      description: "Mascarilla profesional con masaje de cuero cabelludo. Cabello con brillo real.",
+      price: 18,
+      durationMin: 30,
+      category: "Tratamiento",
     },
   ] satisfies ServiceDef[],
 

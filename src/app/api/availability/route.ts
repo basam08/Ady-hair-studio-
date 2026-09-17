@@ -17,6 +17,7 @@ export async function GET(req: NextRequest) {
 
   const parsed = availabilityQuerySchema.safeParse({
     service: req.nextUrl.searchParams.get("service") ?? "",
+    stylist: req.nextUrl.searchParams.get("stylist") ?? undefined,
     date: req.nextUrl.searchParams.get("date") ?? "",
   });
   if (!parsed.success) {
@@ -34,7 +35,7 @@ export async function GET(req: NextRequest) {
 
   const service = await prisma.service.findUnique({
     where: { slug: parsed.data.service },
-    select: { durationMin: true, active: true, name: true },
+    select: { durationMin: true, active: true, bookableOnline: true, name: true },
   });
   if (!service || !service.active) {
     return NextResponse.json(
@@ -42,8 +43,34 @@ export async function GET(req: NextRequest) {
       { status: 404 },
     );
   }
+  if (!service.bookableOnline) {
+    return NextResponse.json(
+      {
+        error: {
+          code: "SERVICE_NOT_BOOKABLE",
+          message: "Este servicio no se puede reservar online",
+        },
+      },
+      { status: 409 },
+    );
+  }
 
-  const slots = await getAvailableSlots(parsed.data.date, service.durationMin);
+  let stylistId: string | null = null;
+  if (parsed.data.stylist) {
+    const stylist = await prisma.stylist.findUnique({
+      where: { slug: parsed.data.stylist },
+      select: { id: true, active: true },
+    });
+    if (!stylist || !stylist.active) {
+      return NextResponse.json(
+        { error: { code: "STYLIST_NOT_FOUND", message: "Peluquero no disponible" } },
+        { status: 404 },
+      );
+    }
+    stylistId = stylist.id;
+  }
+
+  const slots = await getAvailableSlots(parsed.data.date, service.durationMin, stylistId);
   return NextResponse.json({
     date: parsed.data.date,
     service: parsed.data.service,

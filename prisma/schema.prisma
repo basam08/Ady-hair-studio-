@@ -25,16 +25,29 @@ model Admin {
 }
 
 model Service {
-  id          String    @id @default(cuid())
-  slug        String    @unique
-  name        String
-  description String
-  priceCents  Int
-  durationMin Int
-  category    String
-  active      Boolean   @default(true)
-  sortOrder   Int       @default(0)
-  bookings    Booking[]
+  id             String    @id @default(cuid())
+  slug           String    @unique
+  name           String
+  description    String
+  priceCents     Int
+  durationMin    Int
+  category       String
+  active         Boolean   @default(true)
+  // Si es false, no se puede reservar online (p. ej. mechas): el cliente
+  // debe consultar por WhatsApp antes de que se le asigne un hueco.
+  bookableOnline Boolean   @default(true)
+  sortOrder      Int       @default(0)
+  bookings       Booking[]
+}
+
+model Stylist {
+  id        String    @id @default(cuid())
+  slug      String    @unique
+  name      String
+  role      String
+  active    Boolean   @default(true)
+  sortOrder Int       @default(0)
+  bookings  Booking[]
 }
 
 model Client {
@@ -62,6 +75,11 @@ model Booking {
   serviceName   String
   priceCents    Int
   durationMin   Int
+
+  // Nullable por compatibilidad con reservas creadas antes de tener
+  // peluqueros nombrados en el sistema.
+  stylistId     String?
+  stylist       Stylist?      @relation(fields: [stylistId], references: [id])
 
   startsAt      DateTime
   endsAt        DateTime

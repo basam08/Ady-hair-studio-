@@ -49,14 +49,16 @@ src/
 │   ├── stats.ts            métricas del dashboard
 │   └── integrations/       email (SMTP) · whatsapp (Twilio) · google-calendar
 ├── middleware.ts           cabeceras de seguridad + protección de /admin
-prisma/schema.prisma        modelos: Admin, Service, Client, Booking, Blackout
+prisma/schema.prisma        modelos: Admin, Service, Stylist, Client, Booking, Blackout
 ```
 
 ## Adaptar a un negocio real
 
 1. Edita **`src/config/salon.ts`**: nombre, dirección, WhatsApp, horario
-   semanal (con pausas), festivos, nº de sillas, y la lista de servicios con
-   precio y duración. Sustituye las URLs de `gallery` por fotos propias.
+   semanal (con pausas), festivos, peluqueros (`stylists`), y la lista de
+   servicios con precio y duración. Un servicio con `bookableOnline: false`
+   no se puede reservar desde la web (el cliente debe escribir por
+   WhatsApp). Sustituye las URLs de `gallery` por fotos propias.
 2. `npm run db:seed` vuelve a cargar los servicios en la base de datos.
 3. Cambia `ADMIN_EMAIL` / `ADMIN_PASSWORD` y vuelve a sembrar el admin.
 

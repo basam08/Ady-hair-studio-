@@ -2,6 +2,7 @@ import Link from "next/link";
 import { getDashboardStats } from "@/lib/stats";
 import { formatPriceCents, salon } from "@/config/salon";
 import { formatTimeInZone } from "@/lib/time";
+import { prisma } from "@/lib/db";
 
 export const dynamic = "force-dynamic";
 
@@ -26,7 +27,10 @@ function Stat({
 }
 
 export default async function AdminDashboard() {
-  const stats = await getDashboardStats();
+  const [stats, stylistCount] = await Promise.all([
+    getDashboardStats(),
+    prisma.stylist.count({ where: { active: true } }),
+  ]);
 
   return (
     <div>
@@ -45,7 +49,7 @@ export default async function AdminDashboard() {
         <Stat
           label="Ocupación 7 días"
           value={`${stats.occupancyNext7}%`}
-          hint={`${salon.chairs} sillas`}
+          hint={`${stylistCount} peluqueros`}
         />
         <Stat label="Citas hoy" value={String(stats.todayCount)} />
         <Stat
@@ -78,7 +82,7 @@ export default async function AdminDashboard() {
                   <div>
                     <p className="text-sm">{a.serviceName}</p>
                     <p className="u-mono text-xs text-cocoa">
-                      {a.client} · {a.phone} · silla {a.chair}
+                      {a.client} · {a.phone} · {a.stylistName}
                     </p>
                   </div>
                   <span
