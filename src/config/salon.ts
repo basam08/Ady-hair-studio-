@@ -26,7 +26,12 @@ export interface ServiceDef {
   price: number;
   /** Duración en minutos — define cuánto ocupa la agenda */
   durationMin: number;
-  category: "Mujer" | "Hombre" | "Niños" | "Color";
+  category:
+    | "Mujer · Color"
+    | "Mujer · Corte y peinado"
+    | "Mujer · Cuidado capilar"
+    | "Hombre"
+    | "Niños";
   /**
    * Si es false, el servicio no se puede reservar desde la web (p. ej.
    * mechas, que requieren valorar el pelo antes). El cliente debe escribir
@@ -139,7 +144,117 @@ export const salon = {
   ] as readonly string[],
 
   services: [
-    // ── Mujer ──────────────────────────────────────────────────────
+    // ── Mujer · Color ──────────────────────────────────────────────
+    {
+      slug: "tinte-raiz",
+      name: "Tinte de raíz",
+      description: "Retoque de color en raíz. Incluye lavado y secado.",
+      price: 32,
+      durationMin: 60,
+      category: "Mujer · Color",
+    },
+    {
+      slug: "color-completo",
+      name: "Color completo",
+      description: "Coloración de todo el cabello, de raíz a puntas. Incluye lavado y secado.",
+      price: 39,
+      durationMin: 60,
+      category: "Mujer · Color",
+    },
+    {
+      slug: "color-sin-amoniaco",
+      name: "Color sin amoníaco",
+      description: "Coloración con tinte sin amoníaco, más suave con el cuero cabelludo.",
+      price: 35,
+      durationMin: 60,
+      category: "Mujer · Color",
+    },
+    {
+      slug: "retoque-tinte",
+      name: "Retoque de tinte",
+      description: "Retoque de color para mantener el tono entre coloraciones completas.",
+      price: 22,
+      durationMin: 60,
+      category: "Mujer · Color",
+    },
+    {
+      slug: "mechas-mujer",
+      name: "Mechas",
+      description:
+        "Mechas clásicas con papel o gorro. Requiere valorar el pelo antes: escríbenos por WhatsApp para reservarlo.",
+      price: 60,
+      durationMin: 120,
+      category: "Mujer · Color",
+      bookableOnline: false,
+    },
+    {
+      slug: "mechas-zonales",
+      name: "Mechas zonales",
+      description:
+        "Mechas solo en la zona delantera o superior. Requiere valorar el pelo antes: escríbenos por WhatsApp para reservarlo.",
+      price: 40,
+      durationMin: 90,
+      category: "Mujer · Color",
+      bookableOnline: false,
+    },
+    {
+      slug: "reflejos",
+      name: "Reflejos",
+      description: "Iluminación suave para dar luz y movimiento al color natural.",
+      price: 49,
+      durationMin: 75,
+      category: "Mujer · Color",
+    },
+    {
+      slug: "contorno-iluminacion",
+      name: "Contorno / Iluminación",
+      description:
+        "Aclarado alrededor de la cara para iluminar el rostro. El precio depende del largo y densidad: escríbenos por WhatsApp para valorarlo.",
+      price: 49,
+      durationMin: 90,
+      category: "Mujer · Color",
+      bookableOnline: false,
+    },
+    {
+      slug: "balayage",
+      name: "Balayage",
+      description:
+        "Técnica de aclarado a mano alzada para un degradado natural. El precio depende del largo y densidad: escríbenos por WhatsApp para valorarlo.",
+      price: 75,
+      durationMin: 150,
+      category: "Mujer · Color",
+      bookableOnline: false,
+    },
+    {
+      slug: "decoloracion",
+      name: "Decoloración",
+      description:
+        "Aclarado del cabello para preparar un cambio de color. El precio depende del largo y densidad: escríbenos por WhatsApp para valorarlo.",
+      price: 75,
+      durationMin: 120,
+      category: "Mujer · Color",
+      bookableOnline: false,
+    },
+    {
+      slug: "babylight",
+      name: "Babylight",
+      description:
+        "Mechas finas y muy naturales, técnica de precisión. El precio depende del largo y densidad: escríbenos por WhatsApp para valorarlo.",
+      price: 85,
+      durationMin: 150,
+      category: "Mujer · Color",
+      bookableOnline: false,
+    },
+    {
+      slug: "moldeador",
+      name: "Moldeador",
+      description: "Permanente u ondulado para dar cuerpo y forma al cabello.",
+      price: 49,
+      durationMin: 60,
+      category: "Mujer · Color",
+    },
+
+    // ── Mujer · Corte y peinado ──────────────────────────────────────
     {
       slug: "corte-mujer",
       name: "Corte mujer",
@@ -147,15 +262,113 @@ export const salon = {
         "Lavado, corte personalizado y peinado. Asesoramiento de forma según tu tipo de cara y textura.",
       price: 22,
       durationMin: 30,
-      category: "Mujer",
+      category: "Mujer · Corte y peinado",
     },
     {
-      slug: "peinado-evento",
-      name: "Peinado de evento",
-      description: "Recogido o peinado para boda, comunión o fiesta. Prueba previa opcional.",
+      slug: "planchar",
+      name: "Planchar",
+      description: "Alisado con plancha para un acabado liso, sin corte.",
+      price: 10,
+      durationMin: 30,
+      category: "Mujer · Corte y peinado",
+    },
+    {
+      slug: "corte-mujer-puntas",
+      name: "Corte mujer solo puntas",
+      description: "Igualado de puntas para mantener la forma sin quitar largo.",
+      price: 19,
+      durationMin: 30,
+      category: "Mujer · Corte y peinado",
+    },
+    {
+      slug: "cambio-corte",
+      name: "Cambio de corte",
+      description: "Cambio de forma o largo respecto a tu corte actual, con asesoramiento previo.",
+      price: 22,
+      durationMin: 45,
+      category: "Mujer · Corte y peinado",
+    },
+    {
+      slug: "flequillo",
+      name: "Flequillo",
+      description: "Corte o repaso de flequillo.",
+      price: 8,
+      durationMin: 15,
+      category: "Mujer · Corte y peinado",
+    },
+    {
+      slug: "semi-recogido",
+      name: "Semi recogido",
+      description:
+        "Peinado semirecogido para un look especial. El precio depende del peinado: escríbenos por WhatsApp para valorarlo.",
       price: 35,
       durationMin: 60,
-      category: "Mujer",
+      category: "Mujer · Corte y peinado",
+      bookableOnline: false,
+    },
+    {
+      slug: "recogidos",
+      name: "Recogidos",
+      description:
+        "Recogido completo para boda, comunión o fiesta. El precio depende del peinado: escríbenos por WhatsApp para valorarlo.",
+      price: 45,
+      durationMin: 75,
+      category: "Mujer · Corte y peinado",
+      bookableOnline: false,
+    },
+
+    // ── Mujer · Cuidado capilar ──────────────────────────────────────
+    {
+      slug: "hidratacion-express-largo",
+      name: "Hidratación express (largo/medio)",
+      description: "Mascarilla exprés con masaje de cuero cabelludo para pelo largo o medio.",
+      price: 15,
+      durationMin: 30,
+      category: "Mujer · Cuidado capilar",
+    },
+    {
+      slug: "hidratacion-express-corto",
+      name: "Hidratación express (pelo corto)",
+      description: "Mascarilla exprés con masaje de cuero cabelludo para pelo corto.",
+      price: 12,
+      durationMin: 20,
+      category: "Mujer · Cuidado capilar",
+    },
+    {
+      slug: "hidratacion-profunda-corto",
+      name: "Hidratación profunda (pelo corto)",
+      description: "Tratamiento intensivo de hidratación para pelo corto. Brillo y suavidad real.",
+      price: 25,
+      durationMin: 45,
+      category: "Mujer · Cuidado capilar",
+    },
+    {
+      slug: "hidratacion-profunda-largo",
+      name: "Hidratación profunda (largo/medio)",
+      description: "Tratamiento intensivo de hidratación para pelo largo o medio. Brillo y suavidad real.",
+      price: 28,
+      durationMin: 45,
+      category: "Mujer · Cuidado capilar",
+    },
+    {
+      slug: "anticrespado",
+      name: "Anticrespado",
+      description:
+        "Tratamiento para controlar el encrespamiento. El precio depende del largo y densidad: escríbenos por WhatsApp para valorarlo.",
+      price: 75,
+      durationMin: 120,
+      category: "Mujer · Cuidado capilar",
+      bookableOnline: false,
+    },
+    {
+      slug: "alisado-keratina",
+      name: "Alisado de keratina",
+      description:
+        "Alisado progresivo con keratina. El precio depende del largo y densidad: escríbenos por WhatsApp para valorarlo.",
+      price: 100,
+      durationMin: 150,
+      category: "Mujer · Cuidado capilar",
+      bookableOnline: false,
     },
 
     // ── Hombre ─────────────────────────────────────────────────────
@@ -169,7 +382,7 @@ export const salon = {
     },
     {
       slug: "corte-maquina",
-      name: "Corte a máquina",
+      name: "Corte todo máquina",
       description: "Corte completo a máquina, perfilado incluido.",
       price: 15,
       durationMin: 30,
@@ -177,7 +390,7 @@ export const salon = {
     },
     {
       slug: "arreglo-barba",
-      name: "Barba",
+      name: "Arreglo de barba",
       description: "Perfilado con navaja, toalla caliente y aceite. Se puede combinar con corte.",
       price: 10,
       durationMin: 20,
@@ -191,8 +404,18 @@ export const salon = {
       durationMin: 60,
       category: "Hombre",
     },
+    {
+      slug: "mechas-hombre",
+      name: "Mechas",
+      description:
+        "Mechas para cabello masculino. Requiere valorar el pelo antes: escríbenos por WhatsApp para reservarlo.",
+      price: 35,
+      durationMin: 90,
+      category: "Hombre",
+      bookableOnline: false,
+    },
 
-    // ── Niños ──────────────────────────────────────────────────────
+    // ── Niños / Niñas ──────────────────────────────────────────────
     {
       slug: "corte-nina",
       name: "Corte niña",
@@ -209,25 +432,13 @@ export const salon = {
       durationMin: 30,
       category: "Niños",
     },
-
-    // ── Color ──────────────────────────────────────────────────────
     {
-      slug: "color-raiz",
-      name: "Color raíz",
-      description: "Retoque de color en raíz con tinte sin amoníaco. Incluye lavado y secado.",
-      price: 32,
-      durationMin: 60,
-      category: "Color",
-    },
-    {
-      slug: "mechas-balayage",
-      name: "Mechas / Balayage",
-      description:
-        "Técnica de aclarado a mano alzada para un degradado natural. Incluye matiz y tratamiento. Requiere valorar el pelo antes: escríbenos por WhatsApp para reservarlo.",
-      price: 68,
-      durationMin: 150,
-      category: "Color",
-      bookableOnline: false,
+      slug: "lavar-peinar-ninas",
+      name: "Lavar o peinar niñas",
+      description: "Lavado y peinado para niñas, sin corte.",
+      price: 15,
+      durationMin: 20,
+      category: "Niños",
     },
   ] satisfies ServiceDef[],
 
