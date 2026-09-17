@@ -24,7 +24,7 @@ export const metadata: Metadata = {
     type: "website",
     locale: "es_ES",
     url: siteUrl,
-    images: ["/salon/interior-1.jpg"],
+    images: ["/salon/interior-2.jpg"],
   },
   icons: {
     icon: "/logo.jpg",

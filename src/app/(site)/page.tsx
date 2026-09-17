@@ -59,7 +59,7 @@ export default function HomePage() {
 
         <Reveal className="relative mt-14 aspect-[16/10] w-full overflow-hidden border border-line">
           <Image
-            src="/salon/interior-1.jpg"
+            src="/salon/interior-2.jpg"
             alt={`Interior del estudio ${salon.name}`}
             fill
             priority

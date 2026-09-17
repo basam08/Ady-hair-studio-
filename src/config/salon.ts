@@ -449,9 +449,9 @@ export const salon = {
   // Fotos reales de trabajos del estudio.
   gallery: [
     {
-      title: "Transformación cobrizo a rubio",
+      title: "Rubio dorado liso",
       category: "Color",
-      image: "/gallery/antes-despues.jpg",
+      image: "/gallery/rubio-dorado-liso.jpg",
     },
     {
       title: "Balayage miel",
