@@ -9,7 +9,7 @@ export const metadata: Metadata = {
     "Cortes, color, barba, tratamientos y peinados en Ady Hair Cut. Precios y duración de cada servicio.",
 };
 
-const CATEGORIES = ["Mujer", "Hombre", "Niños", "Color", "Tratamiento"] as const;
+const CATEGORIES = ["Mujer", "Hombre", "Niños", "Color"] as const;
 
 export default function ServiciosPage() {
   return (

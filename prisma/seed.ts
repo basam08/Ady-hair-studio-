@@ -44,7 +44,14 @@ async function main() {
       },
     });
   }
-  console.log(`✔ ${salon.services.length} servicios`);
+  // Desactiva servicios que ya no están en la configuración (no se borran
+  // para no romper el historial de reservas que los referencian).
+  const currentSlugs = salon.services.map((s) => s.slug);
+  const deactivated = await prisma.service.updateMany({
+    where: { slug: { notIn: currentSlugs }, active: true },
+    data: { active: false },
+  });
+  console.log(`✔ ${salon.services.length} servicios (${deactivated.count} desactivados)`);
 
   // ── Peluqueros (desde src/config/salon.ts) ─────────────────────
   for (const [i, st] of salon.stylists.entries()) {

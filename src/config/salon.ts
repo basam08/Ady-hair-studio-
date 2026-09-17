@@ -26,7 +26,7 @@ export interface ServiceDef {
   price: number;
   /** Duración en minutos — define cuánto ocupa la agenda */
   durationMin: number;
-  category: "Mujer" | "Hombre" | "Niños" | "Color" | "Tratamiento";
+  category: "Mujer" | "Hombre" | "Niños" | "Color";
   /**
    * Si es false, el servicio no se puede reservar desde la web (p. ej.
    * mechas, que requieren valorar el pelo antes). El cliente debe escribir
@@ -85,9 +85,9 @@ export const salon = {
    * los demás.
    */
   stylists: [
-    { slug: "ady", name: "Ady", role: "Titular del salón" },
-    { slug: "carlos", name: "Carlos", role: "Estilista" },
-    { slug: "mila", name: "Mila", role: "Estilista" },
+    { slug: "ady", name: "Ady", role: "Propietario del salón" },
+    { slug: "carlos", name: "Carlos", role: "Peluquero" },
+    { slug: "mila", name: "Mila", role: "Peluquero" },
   ] satisfies StylistDef[],
 
   /**
@@ -101,7 +101,7 @@ export const salon = {
   slotStepMin: 15,
 
   /** Con cuánta antelación mínima se puede reservar (horas). */
-  minLeadHours: 2,
+  minLeadHours: 0,
 
   /** Con cuánta antelación máxima se puede reservar (días). */
   maxLeadDays: 60,
@@ -146,7 +146,7 @@ export const salon = {
       description:
         "Lavado, corte personalizado y peinado. Asesoramiento de forma según tu tipo de cara y textura.",
       price: 22,
-      durationMin: 60,
+      durationMin: 30,
       category: "Mujer",
     },
     {
@@ -228,16 +228,6 @@ export const salon = {
       durationMin: 150,
       category: "Color",
       bookableOnline: false,
-    },
-
-    // ── Tratamiento ────────────────────────────────────────────────
-    {
-      slug: "tratamiento-hidratacion",
-      name: "Tratamiento de hidratación",
-      description: "Mascarilla profesional con masaje de cuero cabelludo. Cabello con brillo real.",
-      price: 18,
-      durationMin: 30,
-      category: "Tratamiento",
     },
   ] satisfies ServiceDef[],
 
