@@ -1,5 +1,5 @@
 /**
- * Ady Hair Cut — configuración del negocio.
+ * ADY Hair Studio — configuración del negocio.
  *
  * Este es el único archivo que necesitas editar para adaptar el sitio a un
  * negocio real: nombre, contacto, horarios, servicios y galería. Los datos
@@ -53,11 +53,11 @@ export interface GalleryItem {
 }
 
 export const salon = {
-  name: "Ady Hair Cut",
+  name: "ADY Hair Studio",
   tagline: "Corte, color y barbería de precisión",
   intro:
-    "Estudio de peluquería en Valencia. Trabajo técnico, asesoramiento honesto y un resultado pensado para cada persona. Reserva online, atención sin prisas.",
-  founded: 2016,
+    "Estudio de peluquería en Madrid. Trabajo técnico, asesoramiento honesto y un resultado pensado para cada persona. Reserva online, atención sin prisas.",
+  founded: 2023,
 
   contact: {
     phone: "+34 917 50 75 60",
@@ -66,17 +66,21 @@ export const salon = {
     whatsappDisplay: "+34 640 74 76 27",
     email: "hola@adyhaircut.com",
     address: {
-      street: "Carrer de la Tisora, 14, bajo",
-      city: "Valencia",
-      postalCode: "46011",
-      region: "Comunitat Valenciana",
+      // TODO: falta el número del portal — la búsqueda inversa del mapa no lo
+      // devuelve. Añádelo en cuanto lo tengas a mano.
+      street: "Calle Castiello de Jaca",
+      city: "Madrid",
+      postalCode: "28050",
+      region: "Comunidad de Madrid",
       country: "España",
     },
     // Coordenadas para el mapa (Google Maps embed no necesita API key).
     maps: {
-      lat: 39.4699,
-      lng: -0.3763,
-      placeQuery: "Peluquería Ady Hair Cut, Valencia",
+      lat: 40.5024679,
+      lng: -3.6761276,
+      placeQuery: "ADY Hair Studio, Calle Castiello de Jaca, Madrid",
+      // Enlace real de Google Maps al local, para el botón "Cómo llegar".
+      url: "https://maps.app.goo.gl/UTwiqkwccSCqqEGq6",
     },
     social: {
       instagram: "https://instagram.com/adyhaircut",
@@ -442,45 +446,97 @@ export const salon = {
     },
   ] satisfies ServiceDef[],
 
-  // Fotos del trabajo (a color). Sustituye las URLs por fotos propias
-  // cuando las tengas; se recomienda un recorte vertical (4:5).
-  
+  // Fotos reales de trabajos del estudio.
   gallery: [
     {
-      title: "Corte bob",
-      category: "Corte",
-      image:
-        "https://images.unsplash.com/photo-1560869713-7d0a29430803?auto=format&fit=crop&w=1000&q=75",
-    },
-    {
-      title: "Degradado clásico",
-      category: "Barbería",
-      image:
-        "https://images.unsplash.com/photo-1599351431202-1e0f0137899a?auto=format&fit=crop&w=1000&q=75",
-    },
-    {
-      title: "Balayage",
+      title: "Transformación cobrizo a rubio",
       category: "Color",
-      image:
-        "https://images.unsplash.com/photo-1522337660859-02fbefca4702?auto=format&fit=crop&w=1000&q=75",
+      image: "/gallery/antes-despues.jpg",
     },
     {
-      title: "Corte largo en capas",
-      category: "Corte",
-      image:
-        "https://images.unsplash.com/photo-1595476108010-b4d1f102b1b1?auto=format&fit=crop&w=1000&q=75",
+      title: "Balayage miel",
+      category: "Color",
+      image: "/gallery/balayage-miel.jpg",
     },
     {
-      title: "Arreglo de barba",
-      category: "Barbería",
-      image:
-        "https://images.unsplash.com/photo-1503951914875-452162b0f3f1?auto=format&fit=crop&w=1000&q=75",
-    },
-    {
-      title: "Recogido de evento",
+      title: "Recogido de novia",
       category: "Peinado",
-      image:
-        "https://images.unsplash.com/photo-1519699047748-de8e457a634e?auto=format&fit=crop&w=1000&q=75",
+      image: "/gallery/recogido-novia.jpg",
+    },
+    {
+      title: "Rubio ceniza",
+      category: "Color",
+      image: "/gallery/rubio-ceniza.jpg",
+    },
+    {
+      title: "Balayage dorado",
+      category: "Color",
+      image: "/gallery/balayage-dorado.jpg",
+    },
+    {
+      title: "Melena lisa cobriza",
+      category: "Corte",
+      image: "/gallery/lisa-cobriza.jpg",
+    },
+    {
+      title: "Corte bob rubio",
+      category: "Corte",
+      image: "/gallery/bob-rubio.jpg",
+    },
+    {
+      title: "Pelirrojo con flequillo",
+      category: "Color",
+      image: "/gallery/pelirrojo-flequillo.jpg",
+    },
+    {
+      title: "Ondas caramelo",
+      category: "Color",
+      image: "/gallery/ondas-caramelo.jpg",
+    },
+    {
+      title: "Melena lisa caoba",
+      category: "Color",
+      image: "/gallery/lisa-caoba.jpg",
+    },
+    {
+      title: "Rizos dorados",
+      category: "Color",
+      image: "/gallery/rizos-dorados.jpg",
+    },
+    {
+      title: "Peinado con flores",
+      category: "Peinado",
+      image: "/gallery/peinado-flores.jpg",
+    },
+    {
+      title: "Corte niña con flores",
+      category: "Niños",
+      image: "/gallery/nina-flores.jpg",
+    },
+    {
+      title: "Fade afro",
+      category: "Barbería",
+      image: "/gallery/fade-afro.jpg",
+    },
+    {
+      title: "Corte a máquina",
+      category: "Barbería",
+      image: "/gallery/corte-maquina.jpg",
+    },
+    {
+      title: "Corte niño",
+      category: "Niños",
+      image: "/gallery/nino-corte.jpg",
+    },
+    {
+      title: "Nuestra fachada",
+      category: "Estudio",
+      image: "/gallery/estudio-fachada.jpg",
+    },
+    {
+      title: "Dentro del estudio",
+      category: "Estudio",
+      image: "/gallery/estudio-interior.jpg",
     },
   ] satisfies GalleryItem[],
 

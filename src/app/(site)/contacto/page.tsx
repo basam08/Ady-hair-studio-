@@ -77,9 +77,7 @@ export default function ContactoPage() {
             />
           </div>
           <a
-            href={`https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(
-              maps.placeQuery,
-            )}`}
+            href={maps.url}
             target="_blank"
             rel="noopener noreferrer"
             className="u-mono mt-3 inline-block text-xs uppercase tracking-widest link-underline"

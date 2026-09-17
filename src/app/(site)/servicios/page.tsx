@@ -5,8 +5,7 @@ import { Reveal } from "@/components/site/Reveal";
 
 export const metadata: Metadata = {
   title: "Servicios y precios",
-  description:
-    "Cortes, color, barba, tratamientos y peinados en Ady Hair Cut. Precios y duración de cada servicio.",
+  description: `Cortes, color y barbería en ${salon.name}. Precios y duración de cada servicio.`,
 };
 
 const CATEGORIES = [

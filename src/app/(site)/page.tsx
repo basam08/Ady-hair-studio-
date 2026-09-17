@@ -59,8 +59,8 @@ export default function HomePage() {
 
         <Reveal className="relative mt-14 aspect-[16/10] w-full overflow-hidden border border-line">
           <Image
-            src="https://images.unsplash.com/photo-1521590832167-7bcbfaa6381f?auto=format&fit=crop&w=1600&q=75"
-            alt="Interior del estudio Ady Hair Cut"
+            src="/salon/interior-1.jpg"
+            alt={`Interior del estudio ${salon.name}`}
             fill
             priority
             sizes="100vw"

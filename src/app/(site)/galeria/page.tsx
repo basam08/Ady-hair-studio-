@@ -4,8 +4,7 @@ import { GalleryGrid } from "@/components/site/GalleryGrid";
 
 export const metadata: Metadata = {
   title: "Galería de trabajos",
-  description:
-    "Selección de cortes, color y barbería realizados en Ady Hair Cut, Valencia.",
+  description: `Selección de cortes, color y barbería realizados en ${salon.name}, ${salon.contact.address.city}.`,
 };
 
 export default function GaleriaPage() {

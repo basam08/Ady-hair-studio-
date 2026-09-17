@@ -30,7 +30,7 @@ export interface MailInput {
 
 export async function sendEmail(input: MailInput): Promise<void> {
   const tx = getTransporter();
-  const from = process.env.EMAIL_FROM ?? "Ady Hair Cut <no-reply@localhost>";
+  const from = process.env.EMAIL_FROM ?? "ADY Hair Studio <no-reply@localhost>";
 
   if (!tx) {
     console.info(

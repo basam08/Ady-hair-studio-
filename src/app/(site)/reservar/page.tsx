@@ -1,10 +1,11 @@
 import type { Metadata } from "next";
 import { prisma } from "@/lib/db";
+import { salon } from "@/config/salon";
 import { BookingWizard } from "@/components/booking/BookingWizard";
 
 export const metadata: Metadata = {
   title: "Reservar cita",
-  description: "Reserva tu cita en Ady Hair Cut en menos de un minuto, 24/7.",
+  description: `Reserva tu cita en ${salon.name} en menos de un minuto, 24/7.`,
 };
 
 export const dynamic = "force-dynamic";

@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/db";
+import { salon } from "@/config/salon";
 import { ManageBooking } from "@/components/booking/ManageBooking";
 
 export const metadata: Metadata = {
@@ -35,7 +36,7 @@ export default async function ReservaPage({
         href="/"
         className="u-mono text-xs uppercase tracking-widest link-underline"
       >
-        ← Ady Hair Cut
+        ← {salon.name}
       </Link>
       <h1 className="font-display mt-6 text-4xl md:text-5xl">Gestionar cita</h1>
       <div className="rule-sweep mt-6 mb-10 h-px w-full bg-ink" />

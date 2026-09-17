@@ -24,6 +24,11 @@ export const metadata: Metadata = {
     type: "website",
     locale: "es_ES",
     url: siteUrl,
+    images: ["/salon/interior-1.jpg"],
+  },
+  icons: {
+    icon: "/logo.jpg",
+    apple: "/logo.jpg",
   },
   robots: { index: true, follow: true },
 };

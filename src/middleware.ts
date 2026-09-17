@@ -7,7 +7,7 @@ const CSP = [
   `script-src 'self' 'unsafe-inline'${process.env.NODE_ENV === "development" ? " 'unsafe-eval'" : ""}`,
   "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
   "font-src 'self' https://fonts.gstatic.com",
-  "img-src 'self' data: https://images.unsplash.com https://maps.googleapis.com https://*.gstatic.com",
+  "img-src 'self' data: https://maps.googleapis.com https://*.gstatic.com",
   "frame-src https://www.google.com https://maps.google.com",
   "connect-src 'self'",
   "form-action 'self'",
