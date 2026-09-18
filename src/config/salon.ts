@@ -106,9 +106,6 @@ export const salon = {
    */
   turnaroundMin: 0,
 
-  /** Granularidad de los huecos ofrecidos al cliente, en minutos. */
-  slotStepMin: 15,
-
   /** Con cuánta antelación mínima se puede reservar (horas). */
   minLeadHours: 0,
 

@@ -134,6 +134,7 @@ export async function createBooking(
   const full = booking as Booking & {
     client: { name: string; email: string | null; phone: string };
   };
+  const fullWithStylist = { ...full, stylist: { name: stylist.name } };
 
   const eventId = await createCalendarEvent({
     summary: `${full.serviceName} · ${full.client.name}`,
@@ -149,14 +150,14 @@ export async function createBooking(
     });
   }
 
-  await notifyBookingConfirmed(full);
+  await notifyBookingConfirmed(fullWithStylist);
   return booking;
 }
 
 export async function cancelBookingByToken(token: string): Promise<void> {
   const booking = await prisma.booking.findUnique({
     where: { manageToken: token },
-    include: { client: true },
+    include: { client: true, stylist: { select: { name: true } } },
   });
   if (!booking) throw new BookingError("NOT_FOUND", "Reserva no encontrada");
   if (booking.status === "CANCELLED") {
@@ -178,7 +179,7 @@ export async function rescheduleBookingByToken(
 ): Promise<Booking> {
   const existing = await prisma.booking.findUnique({
     where: { manageToken: token },
-    include: { client: true, service: true },
+    include: { client: true, service: true, stylist: { select: { name: true } } },
   });
   if (!existing) throw new BookingError("NOT_FOUND", "Reserva no encontrada");
   if (existing.status === "CANCELLED") {
@@ -237,7 +238,7 @@ export async function rescheduleBookingByToken(
     data: { googleEventId: eventId },
   });
 
-  await notifyBookingConfirmed(updated as never);
+  await notifyBookingConfirmed({ ...updated, stylist: existing.stylist } as never);
   return updated;
 }
 

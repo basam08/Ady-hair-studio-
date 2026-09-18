@@ -38,7 +38,7 @@ export async function GET(req: NextRequest) {
       reminderSentAt: null,
       startsAt: { gte: now, lte: windowEnd },
     },
-    include: { client: true },
+    include: { client: true, stylist: { select: { name: true } } },
     take: 100,
   });
 

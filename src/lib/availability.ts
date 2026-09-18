@@ -97,7 +97,9 @@ export async function getAvailableSlots(
   }));
 
   const turnaround = salon.turnaroundMin * 60_000;
-  const step = salon.slotStepMin;
+  // Cada servicio usa su propia duración como intervalo entre huecos (un
+  // corte de 30 min ofrece hora en punto y media; uno de 60, hora en punto).
+  const step = durationMin;
   const slots: Slot[] = [];
 
   for (const block of blocks) {

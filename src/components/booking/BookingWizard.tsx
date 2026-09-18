@@ -242,9 +242,9 @@ export function BookingWizard({
           <span className="u-mono">{when}</span>
         </p>
         <p className="mt-2 text-sm text-cocoa">
-          Te hemos enviado la confirmación por WhatsApp
-          {form.email ? " y email" : ""}. El día de la cita recibirás un
-          recordatorio.
+          {form.email
+            ? "Te hemos enviado la confirmación por email. El día de la cita recibirás un recordatorio."
+            : "Guarda este enlace para gestionar tu cita: no nos diste un email para enviarte la confirmación."}
         </p>
         <div className="mt-8 flex flex-wrap gap-3">
           <Link

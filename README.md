@@ -47,7 +47,7 @@ src/
 │   ├── validation.ts       esquemas Zod de todas las entradas
 │   ├── rate-limit.ts       límite de peticiones en memoria
 │   ├── stats.ts            métricas del dashboard
-│   └── integrations/       email (SMTP) · whatsapp (Twilio) · google-calendar
+│   └── integrations/       email (Resend) · whatsapp (Twilio) · google-calendar
 ├── middleware.ts           cabeceras de seguridad + protección de /admin
 prisma/schema.prisma        modelos: Admin, Service, Stylist, Client, Booking, Blackout
 ```
@@ -69,7 +69,7 @@ mensaje en consola** en lugar de fallar — el flujo de reservas funciona igual.
 
 | Integración | Variables | Notas |
 |---|---|---|
-| Email | `SMTP_HOST`, `SMTP_USER`, `SMTP_PASSWORD`, `EMAIL_FROM` | Cualquier SMTP (SendGrid, Brevo, Gmail app-password). |
+| Email | `RESEND_API_KEY`, `EMAIL_FROM` | API de [Resend](https://resend.com) (sin SDK), 3000 emails/mes gratis. |
 | WhatsApp / SMS | `TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN`, `TWILIO_WHATSAPP_FROM` | API REST de Twilio, sin SDK. |
 | Google Calendar | `GOOGLE_CALENDAR_ID`, `GOOGLE_SERVICE_ACCOUNT_EMAIL`, `GOOGLE_SERVICE_ACCOUNT_PRIVATE_KEY` | Cuenta de servicio con acceso al calendario. |
 

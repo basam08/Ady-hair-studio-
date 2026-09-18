@@ -1,9 +1,13 @@
 import "server-only";
 import { salon } from "@/config/salon";
-import { formatPriceCents } from "@/config/salon";
 import { formatDateInZone, formatTimeInZone } from "@/lib/time";
 import { sendEmail } from "@/lib/integrations/email";
 import { sendWhatsApp } from "@/lib/integrations/whatsapp";
+import {
+  bookingConfirmedHtml,
+  bookingCancelledHtml,
+  bookingReminderHtml,
+} from "@/lib/email-templates";
 
 interface BookingLike {
   serviceName: string;
@@ -12,6 +16,7 @@ interface BookingLike {
   endsAt: Date;
   manageToken: string;
   client: { name: string; email: string | null; phone: string };
+  stylist?: { name: string } | null;
 }
 
 function siteUrl(): string {
@@ -32,8 +37,9 @@ export async function notifyBookingConfirmed(b: BookingLike): Promise<void> {
     ``,
     `Tu cita en ${salon.name} está confirmada:`,
     `· Servicio: ${b.serviceName}`,
+    ...(b.stylist ? [`· Con: ${b.stylist.name}`] : []),
     `· Cuándo: ${fecha} a las ${hora}`,
-    `· Precio: ${formatPriceCents(b.priceCents)}`,
+    `· Precio: ${(b.priceCents / 100).toFixed(2)} €`,
     `· Dónde: ${salon.contact.address.street}, ${salon.contact.address.city}`,
     ``,
     `¿Necesitas cambiar o cancelar? ${link}`,
@@ -47,6 +53,15 @@ export async function notifyBookingConfirmed(b: BookingLike): Promise<void> {
           to: b.client.email,
           subject: `Cita confirmada · ${salon.name}`,
           text,
+          html: bookingConfirmedHtml({
+            clientName: b.client.name,
+            serviceName: b.serviceName,
+            stylistName: b.stylist?.name,
+            priceCents: b.priceCents,
+            fecha,
+            hora,
+            manageUrl: link,
+          }),
         })
       : Promise.resolve(),
     sendWhatsApp(
@@ -67,6 +82,15 @@ export async function notifyBookingCancelled(b: BookingLike): Promise<void> {
           to: b.client.email,
           subject: `Cita cancelada · ${salon.name}`,
           text,
+          html: bookingCancelledHtml({
+            clientName: b.client.name,
+            serviceName: b.serviceName,
+            stylistName: b.stylist?.name,
+            priceCents: b.priceCents,
+            fecha,
+            hora,
+            manageUrl: manageLink(b.manageToken),
+          }),
         })
       : Promise.resolve(),
     sendWhatsApp(b.client.phone, text),
@@ -74,6 +98,7 @@ export async function notifyBookingCancelled(b: BookingLike): Promise<void> {
 }
 
 export async function notifyBookingReminder(b: BookingLike): Promise<void> {
+  const fecha = formatDateInZone(salon.timeZone, b.startsAt);
   const hora = formatTimeInZone(salon.timeZone, b.startsAt);
   const link = manageLink(b.manageToken);
   const text = `⏰ Recordatorio: hoy tienes cita en ${salon.name} a las ${hora} (${b.serviceName}). Si no puedes venir, avísanos: ${link}`;
@@ -84,6 +109,15 @@ export async function notifyBookingReminder(b: BookingLike): Promise<void> {
           to: b.client.email,
           subject: `Recordatorio de tu cita de hoy · ${salon.name}`,
           text,
+          html: bookingReminderHtml({
+            clientName: b.client.name,
+            serviceName: b.serviceName,
+            stylistName: b.stylist?.name,
+            priceCents: b.priceCents,
+            fecha,
+            hora,
+            manageUrl: link,
+          }),
         })
       : Promise.resolve(),
     sendWhatsApp(b.client.phone, text),
