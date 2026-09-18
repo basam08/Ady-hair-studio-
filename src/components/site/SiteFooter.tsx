@@ -52,9 +52,6 @@ export function SiteFooter() {
               <a href={social.instagram} target="_blank" rel="noopener noreferrer">
                 Instagram
               </a>
-              <a href={social.tiktok} target="_blank" rel="noopener noreferrer">
-                TikTok
-              </a>
             </li>
           </ul>
         </div>

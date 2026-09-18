@@ -83,8 +83,7 @@ export const salon = {
       url: "https://maps.app.goo.gl/UTwiqkwccSCqqEGq6",
     },
     social: {
-      instagram: "https://instagram.com/adyhaircut",
-      tiktok: "https://tiktok.com/@adyhaircut",
+      instagram: "https://www.instagram.com/ady_hair_studio/",
     },
   },
 
