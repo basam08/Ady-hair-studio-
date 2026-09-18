@@ -137,8 +137,8 @@ export async function createBooking(
   const fullWithStylist = { ...full, stylist: { name: stylist.name } };
 
   const eventId = await createCalendarEvent({
-    summary: `${stylist.name} · ${full.serviceName} · ${full.client.name}`,
-    description: `Peluquero/a: ${stylist.name}\nTel: ${full.client.phone}\n${full.clientNote ?? ""}`,
+    summary: `${full.serviceName} · ${full.client.name} · ${stylist.role}: ${stylist.name}`,
+    description: `${stylist.role}: ${stylist.name}\nTel: ${full.client.phone}\n${full.clientNote ?? ""}`,
     startIso: full.startsAt.toISOString(),
     endIso: full.endsAt.toISOString(),
     timeZone: salon.timeZone,
@@ -179,7 +179,7 @@ export async function rescheduleBookingByToken(
 ): Promise<Booking> {
   const existing = await prisma.booking.findUnique({
     where: { manageToken: token },
-    include: { client: true, service: true, stylist: { select: { name: true } } },
+    include: { client: true, service: true, stylist: { select: { name: true, role: true } } },
   });
   if (!existing) throw new BookingError("NOT_FOUND", "Reserva no encontrada");
   if (existing.status === "CANCELLED") {
@@ -226,10 +226,12 @@ export async function rescheduleBookingByToken(
   });
 
   if (existing.googleEventId) await deleteCalendarEvent(existing.googleEventId);
-  const stylistLabel = existing.stylist?.name ?? "Sin asignar";
+  const stylistLabel = existing.stylist
+    ? `${existing.stylist.role}: ${existing.stylist.name}`
+    : "Sin asignar";
   const eventId = await createCalendarEvent({
-    summary: `${stylistLabel} · ${existing.serviceName} · ${existing.client.name}`,
-    description: `Peluquero/a: ${stylistLabel}\nTel: ${existing.client.phone}`,
+    summary: `${existing.serviceName} · ${existing.client.name} · ${stylistLabel}`,
+    description: `${stylistLabel}\nTel: ${existing.client.phone}`,
     startIso: startsAt.toISOString(),
     endIso: endsAt.toISOString(),
     timeZone: salon.timeZone,
