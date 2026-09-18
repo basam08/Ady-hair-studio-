@@ -137,8 +137,8 @@ export async function createBooking(
   const fullWithStylist = { ...full, stylist: { name: stylist.name } };
 
   const eventId = await createCalendarEvent({
-    summary: `${full.serviceName} · ${full.client.name}`,
-    description: `Tel: ${full.client.phone}\n${full.clientNote ?? ""}`,
+    summary: `${stylist.name} · ${full.serviceName} · ${full.client.name}`,
+    description: `Peluquero/a: ${stylist.name}\nTel: ${full.client.phone}\n${full.clientNote ?? ""}`,
     startIso: full.startsAt.toISOString(),
     endIso: full.endsAt.toISOString(),
     timeZone: salon.timeZone,
@@ -226,9 +226,10 @@ export async function rescheduleBookingByToken(
   });
 
   if (existing.googleEventId) await deleteCalendarEvent(existing.googleEventId);
+  const stylistLabel = existing.stylist?.name ?? "Sin asignar";
   const eventId = await createCalendarEvent({
-    summary: `${existing.serviceName} · ${existing.client.name}`,
-    description: `Tel: ${existing.client.phone}`,
+    summary: `${stylistLabel} · ${existing.serviceName} · ${existing.client.name}`,
+    description: `Peluquero/a: ${stylistLabel}\nTel: ${existing.client.phone}`,
     startIso: startsAt.toISOString(),
     endIso: endsAt.toISOString(),
     timeZone: salon.timeZone,
