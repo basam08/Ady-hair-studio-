@@ -19,7 +19,7 @@ export default function GaleriaPage() {
       </p>
 
       <div className="mt-12">
-        <GalleryGrid items={[...salon.gallery, ...salon.gallery]} />
+        <GalleryGrid items={salon.gallery} />
       </div>
     </div>
   );
