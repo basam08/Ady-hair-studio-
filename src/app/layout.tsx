@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import "./globals.css";
-import { salon } from "@/config/salon";
+import { salon, openingHoursSpecification } from "@/config/salon";
 
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
 
@@ -13,11 +13,16 @@ export const metadata: Metadata = {
   description: salon.intro,
   keywords: [
     "peluquería",
+    `peluquería ${salon.contact.address.city}`,
+    "peluquería Las Tablas",
+    "peluquería Fuencarral",
     salon.contact.address.city,
     "corte de pelo",
     "barbería",
-    "reservar cita peluquería",
+    "mechas y balayage",
+    "reservar cita peluquería online",
   ],
+  alternates: { canonical: "/" },
   openGraph: {
     title: salon.name,
     description: salon.intro,
@@ -32,6 +37,35 @@ export const metadata: Metadata = {
   },
   robots: { index: true, follow: true },
 };
+
+function localBusinessJsonLd() {
+  return {
+    "@context": "https://schema.org",
+    "@type": "HairSalon",
+    name: salon.name,
+    description: salon.intro,
+    url: siteUrl,
+    image: `${siteUrl}/logo.jpg`,
+    telephone: salon.contact.phone,
+    priceRange: "€€",
+    address: {
+      "@type": "PostalAddress",
+      streetAddress: salon.contact.address.street,
+      addressLocality: salon.contact.address.city,
+      postalCode: salon.contact.address.postalCode,
+      addressRegion: salon.contact.address.region,
+      addressCountry: "ES",
+    },
+    geo: {
+      "@type": "GeoCoordinates",
+      latitude: salon.contact.maps.lat,
+      longitude: salon.contact.maps.lng,
+    },
+    hasMap: salon.contact.maps.url,
+    openingHoursSpecification: openingHoursSpecification(),
+    sameAs: [salon.contact.social.instagram],
+  };
+}
 
 export default function RootLayout({
   children,
@@ -48,6 +82,10 @@ export default function RootLayout({
         <link
           href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Poppins:ital,wght@0,500;0,600;0,700;1,600&display=swap"
           rel="stylesheet"
+        />
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(localBusinessJsonLd()) }}
         />
       </head>
       <body>{children}</body>

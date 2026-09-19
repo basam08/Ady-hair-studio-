@@ -6,6 +6,7 @@ import { Reveal } from "@/components/site/Reveal";
 export const metadata: Metadata = {
   title: "Servicios y precios",
   description: `Cortes, color y barbería en ${salon.name}. Precios y duración de cada servicio.`,
+  alternates: { canonical: "/servicios" },
 };
 
 const CATEGORIES = [

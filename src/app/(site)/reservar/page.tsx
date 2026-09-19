@@ -6,6 +6,7 @@ import { BookingWizard } from "@/components/booking/BookingWizard";
 export const metadata: Metadata = {
   title: "Reservar cita",
   description: `Reserva tu cita en ${salon.name} en menos de un minuto, 24/7.`,
+  alternates: { canonical: "/reservar" },
 };
 
 export const dynamic = "force-dynamic";

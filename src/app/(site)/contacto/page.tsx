@@ -5,6 +5,7 @@ import { salon, hoursSummary } from "@/config/salon";
 export const metadata: Metadata = {
   title: "Contacto y ubicación",
   description: `Cómo llegar a ${salon.name}, horario y teléfono.`,
+  alternates: { canonical: "/contacto" },
 };
 
 export default function ContactoPage() {

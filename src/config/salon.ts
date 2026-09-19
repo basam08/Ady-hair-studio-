@@ -633,3 +633,40 @@ export function hoursSummary(): { label: string; value: string }[] {
     return { label: weekdayLabel(day), value };
   });
 }
+
+const SCHEMA_WEEKDAYS = [
+  "Sunday",
+  "Monday",
+  "Tuesday",
+  "Wednesday",
+  "Thursday",
+  "Friday",
+  "Saturday",
+] as const;
+
+/** Horario en formato schema.org OpeningHoursSpecification, para el SEO local. */
+export function openingHoursSpecification(): {
+  "@type": "OpeningHoursSpecification";
+  dayOfWeek: string;
+  opens: string;
+  closes: string;
+}[] {
+  const spec: {
+    "@type": "OpeningHoursSpecification";
+    dayOfWeek: string;
+    opens: string;
+    closes: string;
+  }[] = [];
+  const days: WeekDay[] = [0, 1, 2, 3, 4, 5, 6];
+  for (const day of days) {
+    for (const block of salon.hours[day]) {
+      spec.push({
+        "@type": "OpeningHoursSpecification",
+        dayOfWeek: SCHEMA_WEEKDAYS[day],
+        opens: block.open,
+        closes: block.close,
+      });
+    }
+  }
+  return spec;
+}
