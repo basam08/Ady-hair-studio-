@@ -106,7 +106,7 @@ export const salon = {
    * del calendario, y el servidor rechaza igualmente cualquier intento de
    * reservar por si alguien se salta la pantalla.
    */
-  bookingLaunchDate: "2026-10-01",
+  bookingLaunchDate: "2026-09-21",
 
   /**
    * Cuánto se tarda como mínimo en pasar de un cliente al siguiente con el
