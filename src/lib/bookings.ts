@@ -1,7 +1,7 @@
 import "server-only";
 import { randomBytes } from "node:crypto";
 import type { Booking } from "@prisma/client";
-import { salon, isBookingLaunched } from "@/config/salon";
+import { salon } from "@/config/salon";
 import { prisma } from "@/lib/db";
 import { isStylistSlotFree, isPooledSlotFree } from "@/lib/availability";
 import { zonedWallTimeToUtc } from "@/lib/time";
@@ -20,7 +20,6 @@ export class BookingError extends Error {
     public code:
       | "SERVICE_NOT_FOUND"
       | "SERVICE_NOT_BOOKABLE"
-      | "NOT_LAUNCHED"
       | "STYLIST_NOT_FOUND"
       | "SLOT_TAKEN"
       | "OUT_OF_HOURS"
@@ -52,13 +51,6 @@ export async function createBooking(
   input: CreateInput,
   opts: { source: "web" | "admin" } = { source: "web" },
 ): Promise<Booking> {
-  if (opts.source === "web" && !isBookingLaunched()) {
-    throw new BookingError(
-      "NOT_LAUNCHED",
-      "Las reservas online todavía no están abiertas",
-    );
-  }
-
   const service = await prisma.service.findUnique({
     where: { slug: input.serviceSlug },
   });

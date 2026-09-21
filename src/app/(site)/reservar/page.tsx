@@ -17,33 +17,7 @@ export default async function ReservarPage({
   searchParams: Promise<{ servicio?: string }>;
 }) {
   const { servicio } = await searchParams;
-
-  if (!isBookingLaunched()) {
-    return (
-      <div className="mx-auto max-w-3xl px-5 py-16 md:py-24">
-        <p className="u-eyebrow">Reserva</p>
-        <h1 className="font-display mt-4 text-5xl md:text-6xl">
-          Muy pronto por aquí
-        </h1>
-        <div className="rule-sweep mt-6 mb-10 h-px w-full bg-ink" />
-        <p className="max-w-lg text-cocoa">
-          Las reservas online abren el{" "}
-          <strong className="text-ink">1 de octubre</strong>. Mientras tanto,
-          escríbenos por WhatsApp si quieres pedir cita.
-        </p>
-        <a
-          href={`https://wa.me/${salon.contact.whatsapp}?text=${encodeURIComponent(
-            `Hola ${salon.name}, quiero pedir cita.`,
-          )}`}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="btn btn-primary mt-8"
-        >
-          Escribir por WhatsApp
-        </a>
-      </div>
-    );
-  }
+  const launched = isBookingLaunched();
 
   const [services, stylists] = await Promise.all([
     prisma.service.findMany({
@@ -71,6 +45,14 @@ export default async function ReservarPage({
       <p className="u-eyebrow">Reserva</p>
       <h1 className="font-display mt-4 text-5xl md:text-6xl">Pide tu cita</h1>
       <div className="rule-sweep mt-6 mb-10 h-px w-full bg-ink" />
+
+      {!launched && (
+        <p className="mb-10 border border-persimmon bg-persimmon/10 px-4 py-3 text-sm text-persimmon-dark">
+          Estamos en fase de pruebas: las reservas hechas antes del{" "}
+          <strong>1 de octubre</strong> no se van a atender. A partir de esa
+          fecha ya podrás reservar con normalidad.
+        </p>
+      )}
 
       {services.length === 0 ? (
         <p className="text-cocoa">

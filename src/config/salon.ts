@@ -101,12 +101,12 @@ export const salon = {
   ] satisfies StylistDef[],
 
   /**
-   * Fecha (hora local) a partir de la cual se permite reservar online.
-   * Antes de esa fecha, la web muestra un aviso de "próximamente" en vez
-   * del calendario, y el servidor rechaza igualmente cualquier intento de
-   * reservar por si alguien se salta la pantalla.
+   * Fecha (hora local) de lanzamiento oficial de las reservas online. Antes
+   * de esa fecha la reserva funciona igual (para poder hacer pruebas o una
+   * demo), pero /reservar muestra un aviso de que aún está en fase de
+   * pruebas y esas citas podrían no atenderse.
    */
-  bookingLaunchDate: "2026-09-21",
+  bookingLaunchDate: "2026-10-01",
 
   /**
    * Cuánto se tarda como mínimo en pasar de un cliente al siguiente con el
