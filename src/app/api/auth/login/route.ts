@@ -40,6 +40,21 @@ export async function POST(req: NextRequest) {
     );
   }
 
+  // Límite adicional por cuenta: evita fuerza bruta distribuida entre varias
+  // IPs contra un mismo email, que el límite por IP de arriba no cubre.
+  const rlAccount = rateLimit(`login-account:${parsed.data.email}`, 10, 15 * 60_000);
+  if (!rlAccount.ok) {
+    return NextResponse.json(
+      {
+        error: {
+          code: "RATE_LIMITED",
+          message: "Demasiados intentos. Espera unos minutos.",
+        },
+      },
+      { status: 429, headers: { "Retry-After": String(rlAccount.retryAfterSec) } },
+    );
+  }
+
   const admin = await prisma.admin.findUnique({
     where: { email: parsed.data.email },
   });

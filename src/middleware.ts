@@ -3,7 +3,10 @@ import { AUTH_COOKIE_NAME, verifySessionToken } from "@/lib/auth-edge";
 
 const CSP = [
   "default-src 'self'",
-  // Next.js necesita 'unsafe-inline' para estilos y, en dev, eval para HMR.
+  // El único script inline del sitio es el JSON-LD de layout.tsx, generado
+  // en el servidor a partir de la config del negocio (no hay entrada de
+  // usuario en el camino) — 'unsafe-inline' aquí no abre una vía de XSS real.
+  // Next.js necesita 'unsafe-inline' además para estilos y, en dev, eval para HMR.
   `script-src 'self' 'unsafe-inline'${process.env.NODE_ENV === "development" ? " 'unsafe-eval'" : ""}`,
   "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
   "font-src 'self' https://fonts.gstatic.com",

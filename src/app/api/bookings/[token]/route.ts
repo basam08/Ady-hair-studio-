@@ -11,9 +11,17 @@ import { clientIp, rateLimit } from "@/lib/rate-limit";
 export const dynamic = "force-dynamic";
 
 export async function GET(
-  _req: NextRequest,
+  req: NextRequest,
   { params }: { params: Promise<{ token: string }> },
 ) {
+  const rl = rateLimit(`manage-get:${clientIp(req.headers)}`, 30, 10 * 60_000);
+  if (!rl.ok) {
+    return NextResponse.json(
+      { error: { code: "RATE_LIMITED", message: "Demasiadas peticiones" } },
+      { status: 429, headers: { "Retry-After": String(rl.retryAfterSec) } },
+    );
+  }
+
   const { token } = await params;
   const booking = await prisma.booking.findUnique({
     where: { manageToken: token },
