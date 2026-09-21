@@ -9,6 +9,8 @@
  * `npm run db:seed`.
  */
 
+import { zonedWallTimeToUtc } from "@/lib/time";
+
 export type WeekDay = 0 | 1 | 2 | 3 | 4 | 5 | 6; // 0 = domingo
 
 export interface OpeningBlock {
@@ -97,6 +99,14 @@ export const salon = {
     { slug: "carlos", name: "Carlos", role: "Peluquero" },
     { slug: "mila", name: "Mila", role: "Peluquero" },
   ] satisfies StylistDef[],
+
+  /**
+   * Fecha (hora local) a partir de la cual se permite reservar online.
+   * Antes de esa fecha, la web muestra un aviso de "próximamente" en vez
+   * del calendario, y el servidor rechaza igualmente cualquier intento de
+   * reservar por si alguien se salta la pantalla.
+   */
+  bookingLaunchDate: "2026-10-01",
 
   /**
    * Cuánto se tarda como mínimo en pasar de un cliente al siguiente con el
@@ -587,6 +597,13 @@ export const salon = {
 } as const;
 
 export type SalonConfig = typeof salon;
+
+/** True si ya se ha alcanzado salon.bookingLaunchDate (00:00 hora local). */
+export function isBookingLaunched(now: Date = new Date()): boolean {
+  const [year, month, day] = salon.bookingLaunchDate.split("-").map(Number);
+  const launch = zonedWallTimeToUtc(salon.timeZone, year, month, day, 0, 0);
+  return now.getTime() >= launch.getTime();
+}
 
 export function formatPrice(euros: number): string {
   return new Intl.NumberFormat("es-ES", {

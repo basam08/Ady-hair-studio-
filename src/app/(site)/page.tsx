@@ -1,8 +1,41 @@
 import Link from "next/link";
-import Image from "next/image";
 import { salon, formatPrice, formatDuration } from "@/config/salon";
 import { Reveal } from "@/components/site/Reveal";
 import { GalleryGrid } from "@/components/site/GalleryGrid";
+import { HeroCarousel } from "@/components/site/HeroCarousel";
+
+const HERO_SLIDES = [
+  { src: "/salon/hero-1.jpg", alt: "Fachada del estudio" },
+  { src: "/salon/interior-2.jpg", alt: "Interior del estudio" },
+  { src: "/gallery/estudio-interior.jpg", alt: "Dentro del estudio" },
+];
+
+const FAQS = [
+  {
+    q: "¿Necesito reservar cita o puedo venir sin avisar?",
+    a: "Lo mejor es reservar online: así aseguras la hora y el peluquero que prefieras. El sistema solo muestra huecos realmente libres.",
+  },
+  {
+    q: "¿Puedo elegir peluquero al reservar?",
+    a: "Sí. Al reservar eliges entre Ady, Carlos o Mila, y solo se te muestran los huecos libres de esa persona.",
+  },
+  {
+    q: "¿Puedo cancelar o cambiar mi cita?",
+    a: "Sí, sin llamar. En el email de confirmación recibes un enlace para cancelarla o cambiar el día y la hora tú mismo.",
+  },
+  {
+    q: "¿Puedo reservar mechas o balayage desde la web?",
+    a: "Ese tipo de servicios necesita valorar el pelo antes de dar precio y hora, así que se reservan escribiendo por WhatsApp en vez de online.",
+  },
+  {
+    q: "¿Hacéis cortes para niños y niñas?",
+    a: "Sí, tenemos servicio específico de corte para niña y para niño.",
+  },
+  {
+    q: "¿Cuál es el horario del salón?",
+    a: "Martes a viernes de 10:00 a 20:00, sábados de 10:00 a 14:00. Lunes y festivos, cerrado.",
+  },
+] as const;
 
 const STEPS = [
   {
@@ -58,15 +91,8 @@ export default function HomePage() {
         </div>
 
         <Reveal className="relative mt-14 aspect-[16/10] w-full overflow-hidden border border-line">
-          <Image
-            src="/salon/interior-2.jpg"
-            alt={`Interior del estudio ${salon.name}`}
-            fill
-            priority
-            sizes="100vw"
-            className="img-photo object-cover"
-          />
-          <span className="absolute bottom-4 left-4 u-eyebrow bg-oat px-3 py-1.5 text-ink">
+          <HeroCarousel slides={HERO_SLIDES} />
+          <span className="absolute bottom-4 left-4 z-10 u-eyebrow bg-oat px-3 py-1.5 text-ink">
             {salon.contact.address.street}
           </span>
         </Reveal>
@@ -180,6 +206,46 @@ export default function HomePage() {
             ))}
           </div>
         </div>
+      </section>
+
+      {/* ── Preguntas frecuentes ─────────────────────────────── */}
+      <section className="mx-auto max-w-3xl px-5 py-16 md:py-24">
+        <p className="u-eyebrow">Dudas</p>
+        <h2 className="font-display mt-3 text-4xl md:text-5xl">
+          Preguntas frecuentes
+        </h2>
+        <div className="mt-10 divide-y divide-line border-y border-line">
+          {FAQS.map((item) => (
+            <details key={item.q} className="group py-5">
+              <summary className="flex cursor-pointer list-none items-center justify-between gap-4 font-display text-lg marker:content-none">
+                {item.q}
+                <span
+                  aria-hidden
+                  className="shrink-0 text-2xl text-cocoa transition-transform group-open:rotate-45"
+                >
+                  +
+                </span>
+              </summary>
+              <p className="mt-3 max-w-xl text-sm leading-relaxed text-cocoa">
+                {item.a}
+              </p>
+            </details>
+          ))}
+        </div>
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify({
+              "@context": "https://schema.org",
+              "@type": "FAQPage",
+              mainEntity: FAQS.map((item) => ({
+                "@type": "Question",
+                name: item.q,
+                acceptedAnswer: { "@type": "Answer", text: item.a },
+              })),
+            }),
+          }}
+        />
       </section>
 
       {/* ── CTA / ubicación ──────────────────────────────────── */}

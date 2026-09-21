@@ -235,6 +235,27 @@ body {
   }
 }
 
+/* Carrusel de fotos del hero: fundido encadenado en bucle */
+.hero-carousel-slide {
+  opacity: 0;
+  animation-name: hero-fade;
+  animation-timing-function: ease-in-out;
+  animation-iteration-count: infinite;
+}
+@keyframes hero-fade {
+  0% {
+    opacity: 0;
+  }
+  4%,
+  24% {
+    opacity: 1;
+  }
+  33.33%,
+  100% {
+    opacity: 0;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   html {
     scroll-behavior: auto;
@@ -253,5 +274,12 @@ body {
     overflow-x: auto;
     -webkit-mask-image: none;
     mask-image: none;
+  }
+  .hero-carousel-slide {
+    animation: none !important;
+    opacity: 1 !important;
+  }
+  .hero-carousel-slide:not(:first-child) {
+    display: none;
   }
 }
