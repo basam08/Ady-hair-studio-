@@ -1,7 +1,7 @@
 import "server-only";
 import { randomBytes } from "node:crypto";
 import type { Booking } from "@prisma/client";
-import { salon } from "@/config/salon";
+import { salon, canStylistPerform } from "@/config/salon";
 import { prisma } from "@/lib/db";
 import { isStylistSlotFree, isPooledSlotFree } from "@/lib/availability";
 import { zonedWallTimeToUtc } from "@/lib/time";
@@ -21,6 +21,7 @@ export class BookingError extends Error {
       | "SERVICE_NOT_FOUND"
       | "SERVICE_NOT_BOOKABLE"
       | "STYLIST_NOT_FOUND"
+      | "STYLIST_CANNOT_PERFORM"
       | "SLOT_TAKEN"
       | "OUT_OF_HOURS"
       | "TOO_SOON"
@@ -88,6 +89,17 @@ export async function createBooking(
       : [];
   if (extras.length !== extraSlugs.length) {
     throw new BookingError("SERVICE_NOT_FOUND", "Extra no disponible");
+  }
+
+  if (opts.source === "web") {
+    const allChosen = [service, ...extras];
+    const cannotDo = allChosen.find((s) => !canStylistPerform(stylist.slug, s));
+    if (cannotDo) {
+      throw new BookingError(
+        "STYLIST_CANNOT_PERFORM",
+        `${stylist.name} no hace "${cannotDo.name}"`,
+      );
+    }
   }
 
   const totalPriceCents =

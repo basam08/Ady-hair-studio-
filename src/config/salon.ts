@@ -607,6 +607,35 @@ export function isBookingLaunched(now: Date = new Date()): boolean {
   return now.getTime() >= launch.getTime();
 }
 
+/** Servicios de mujer que Ady sí hace (tinte sencillo, no mechas ni técnicas). */
+const ADY_MUJER_SLUGS = ["tinte-raiz", "color-completo", "color-sin-amoniaco"];
+
+/**
+ * Qué peluquero hace qué. Reglas del salón:
+ *  - Ady: todo "Hombre" + el tinte sencillo de mujer (no mechas/balayage/
+ *    técnicas). No hace cortes ni peinados de mujer.
+ *  - Carlos: todo "Mujer" (corte, color, cuidado, mechas, extras) + Corte
+ *    hombre.
+ *  - Mila: todo "Mujer", igual que Carlos, pero nada de "Hombre".
+ *  - "Niños" lo hacen los tres.
+ */
+export function canStylistPerform(
+  stylistSlug: string,
+  service: { slug: string; category: string },
+): boolean {
+  if (service.category === "Niños") return true;
+  if (stylistSlug === "ady") {
+    return service.category === "Hombre" || ADY_MUJER_SLUGS.includes(service.slug);
+  }
+  if (stylistSlug === "carlos") {
+    return service.category.startsWith("Mujer") || service.slug === "corte-hombre";
+  }
+  if (stylistSlug === "mila") {
+    return service.category.startsWith("Mujer");
+  }
+  return true;
+}
+
 export function formatPrice(euros: number): string {
   return new Intl.NumberFormat("es-ES", {
     style: "currency",
