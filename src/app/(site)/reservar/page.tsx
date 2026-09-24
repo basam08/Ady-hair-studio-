@@ -31,6 +31,8 @@ export default async function ReservarPage({
         durationMin: true,
         category: true,
         bookableOnline: true,
+        isExtra: true,
+        priceFrom: true,
       },
     }),
     prisma.stylist.findMany({

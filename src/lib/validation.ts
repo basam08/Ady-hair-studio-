@@ -9,8 +9,11 @@ const phoneSchema = z
   .max(20, "Teléfono demasiado largo")
   .regex(/^\+?[0-9\s().-]{6,20}$/, "Formato de teléfono no válido");
 
+const extraSlugsSchema = z.array(z.string().trim().min(1).max(64)).max(10).default([]);
+
 export const bookingCreateSchema = z.object({
   serviceSlug: z.string().trim().min(1).max(64),
+  extraSlugs: extraSlugsSchema.optional(),
   stylistSlug: z.string().trim().min(1).max(64),
   date: z
     .string()
@@ -46,6 +49,7 @@ export const bookingManageSchema = z.object({
 
 export const availabilityQuerySchema = z.object({
   service: z.string().trim().min(1).max(64),
+  extras: z.string().trim().max(500).optional(),
   stylist: z.string().trim().min(1).max(64).optional(),
   date: z.string().refine(isValidDateKey, "Fecha no válida"),
 });

@@ -43,17 +43,29 @@ export default function ServiciosPage() {
                   className="grid grid-cols-[1fr_auto] items-start gap-4 border-t border-line py-5 last:border-b"
                 >
                   <div>
-                    <p className="font-display text-2xl">{s.name}</p>
+                    <p className="font-display text-2xl">
+                      {s.name}
+                      {s.isExtra && (
+                        <span className="u-eyebrow ml-2 text-cocoa">Extra</span>
+                      )}
+                    </p>
                     <p className="mt-1 max-w-lg text-sm text-cocoa">
                       {s.description}
                     </p>
                   </div>
                   <div className="text-right">
-                    <p className="u-mono text-lg">{formatPrice(s.price)}</p>
+                    <p className="u-mono text-lg">
+                      {s.priceFrom ? "Desde " : ""}
+                      {formatPrice(s.price)}
+                    </p>
                     <p className="u-mono text-xs text-cocoa">
                       {formatDuration(s.durationMin)}
                     </p>
-                    {s.bookableOnline === false ? (
+                    {s.isExtra ? (
+                      <span className="mt-2 inline-block text-xs text-cocoa">
+                        Se añade a otro servicio
+                      </span>
+                    ) : s.bookableOnline === false ? (
                       <a
                         href={`https://wa.me/${salon.contact.whatsapp}?text=${encodeURIComponent(
                           `Hola ${salon.name}, quiero pedir cita para ${s.name}.`,

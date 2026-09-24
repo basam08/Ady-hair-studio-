@@ -40,6 +40,13 @@ export interface ServiceDef {
    * por WhatsApp y se reserva a mano desde el panel.
    */
   bookableOnline?: boolean;
+  /**
+   * Servicio "extra": no aparece como opción principal al reservar, se
+   * añade opcionalmente encima del servicio elegido (p. ej. Planchar).
+   */
+  isExtra?: boolean;
+  /** Si es true, el precio se muestra como "Desde X €". */
+  priceFrom?: boolean;
 }
 
 export interface StylistDef {
@@ -59,14 +66,14 @@ export const salon = {
   tagline: "Corte, color y barbería de precisión",
   intro:
     "Estudio de peluquería en Madrid. Trabajo técnico, asesoramiento honesto y un resultado pensado para cada persona. Reserva online, atención sin prisas.",
-  founded: 2023,
+  founded: 2013,
 
   contact: {
     phone: "+34 917 50 75 60",
     // Número en formato internacional sin signos, para el enlace de WhatsApp.
     whatsapp: "34640747627",
     whatsappDisplay: "+34 640 74 76 27",
-    email: "hola@adyhaircut.com",
+    email: "info@adyhairstudio.com",
     address: {
       // TODO: falta el número del portal — la búsqueda inversa del mapa no lo
       // devuelve. Añádelo en cuanto lo tengas a mano.
@@ -180,14 +187,6 @@ export const salon = {
       category: "Mujer · Color",
     },
     {
-      slug: "retoque-tinte",
-      name: "Retoque de tinte",
-      description: "Retoque de color para mantener el tono entre coloraciones completas.",
-      price: 22,
-      durationMin: 60,
-      category: "Mujer · Color",
-    },
-    {
       slug: "mechas-mujer",
       name: "Mechas",
       description:
@@ -224,6 +223,7 @@ export const salon = {
       durationMin: 90,
       category: "Mujer · Color",
       bookableOnline: false,
+      priceFrom: true,
     },
     {
       slug: "balayage",
@@ -234,6 +234,7 @@ export const salon = {
       durationMin: 150,
       category: "Mujer · Color",
       bookableOnline: false,
+      priceFrom: true,
     },
     {
       slug: "decoloracion",
@@ -244,6 +245,7 @@ export const salon = {
       durationMin: 120,
       category: "Mujer · Color",
       bookableOnline: false,
+      priceFrom: true,
     },
     {
       slug: "babylight",
@@ -254,6 +256,7 @@ export const salon = {
       durationMin: 150,
       category: "Mujer · Color",
       bookableOnline: false,
+      priceFrom: true,
     },
     {
       slug: "moldeador",
@@ -277,9 +280,34 @@ export const salon = {
     {
       slug: "planchar",
       name: "Planchar",
-      description: "Alisado con plancha para un acabado liso, sin corte.",
-      price: 10,
+      description: "Extra: alisado con plancha para un acabado liso, añadido a otro servicio.",
+      price: 8,
+      durationMin: 15,
+      category: "Mujer · Corte y peinado",
+      isExtra: true,
+    },
+    {
+      slug: "peinado-mujer-corto",
+      name: "Peinado mujer corto",
+      description: "Lavado y peinado para cabello corto.",
+      price: 18,
       durationMin: 30,
+      category: "Mujer · Corte y peinado",
+    },
+    {
+      slug: "peinado-mujer-medio",
+      name: "Peinado mujer medio",
+      description: "Lavado y peinado para cabello media melena.",
+      price: 21,
+      durationMin: 40,
+      category: "Mujer · Corte y peinado",
+    },
+    {
+      slug: "peinado-mujer-largo",
+      name: "Peinado mujer largo",
+      description: "Lavado y peinado para cabello largo.",
+      price: 23,
+      durationMin: 45,
       category: "Mujer · Corte y peinado",
     },
     {
@@ -294,7 +322,7 @@ export const salon = {
       slug: "cambio-corte",
       name: "Cambio de corte",
       description: "Cambio de forma o largo respecto a tu corte actual, con asesoramiento previo.",
-      price: 22,
+      price: 25,
       durationMin: 45,
       category: "Mujer · Corte y peinado",
     },
@@ -315,6 +343,7 @@ export const salon = {
       durationMin: 60,
       category: "Mujer · Corte y peinado",
       bookableOnline: false,
+      priceFrom: true,
     },
     {
       slug: "recogidos",
@@ -325,6 +354,7 @@ export const salon = {
       durationMin: 75,
       category: "Mujer · Corte y peinado",
       bookableOnline: false,
+      priceFrom: true,
     },
 
     // ── Mujer · Cuidado capilar ──────────────────────────────────────
@@ -369,6 +399,7 @@ export const salon = {
       durationMin: 120,
       category: "Mujer · Cuidado capilar",
       bookableOnline: false,
+      priceFrom: true,
     },
     {
       slug: "alisado-keratina",
@@ -379,6 +410,7 @@ export const salon = {
       durationMin: 150,
       category: "Mujer · Cuidado capilar",
       bookableOnline: false,
+      priceFrom: true,
     },
 
     // ── Hombre ─────────────────────────────────────────────────────
@@ -455,17 +487,12 @@ export const salon = {
   // Fotos reales de trabajos del estudio.
   gallery: [
     {
-      title: "Rubio dorado liso",
-      category: "Color",
-      image: "/gallery/rubio-dorado-liso.jpg",
-    },
-    {
       title: "Balayage miel",
       category: "Color",
       image: "/gallery/balayage-miel.jpg",
     },
     {
-      title: "Recogido de novia",
+      title: "Peinado con movimiento",
       category: "Peinado",
       image: "/gallery/recogido-novia.jpg",
     },
@@ -544,39 +571,19 @@ export const salon = {
       category: "Estudio",
       image: "/gallery/estudio-interior.jpg",
     },
+    {
+      title: "Rubio dorado liso",
+      category: "Color",
+      image: "/gallery/rubio-dorado-liso.jpg",
+    },
   ] satisfies GalleryItem[],
 
   // Reseñas reales de clientes (Google). Solo texto, sin foto.
   testimonials: [
     {
       quote:
-        "He estado hoy en la peluquería y quiero dar las gracias a mi peluquero Estiven... me he salido alucinada, han pasado muchos peluqueros/as, llevo 20 años siendo fiel a esa peluquería, y nunca, nunca había salido como hoy. Estiven me ha dejado con las mechas de mi vida. Tiene unas manos y un talento increíble.",
-      author: "Patricia A.",
-    },
-    {
-      quote:
-        "Fui a probar esta peluquería por la recomendación de una amiga y no pude salir más encantada. Nadia me hizo unas mechas babylight preciosas y un corte de pelo espectacular. Es una gran profesional, con un trato cercano, amable y muy cuidadosa en cada detalle. ¡Muy recomendable!",
-      author: "Cristina Mingo Montalvo",
-    },
-    {
-      quote:
-        "Servicio muy bueno. Fui con mi madre y Nadia le hizo un corte cortito precioso. Mi madre quedó encantada, dijo que nunca le habían cortado el pelo con tanto esmero y estilo. Fue tratada con mucho cariño y simpatía. Volveremos 100%.",
-      author: "Ana Rosa Casas",
-    },
-    {
-      quote:
         "Hoy fui a darme unas mechas por primera vez y me ha encantado. El chico súper majo, te asesora muy bien y enseguida sabe lo que quieres.",
       author: "Rosa",
-    },
-    {
-      quote:
-        "Estuve ayer para corte y peinado. Me atendió Nadia. Quedé encantada. Es muy cercana y te asesora en todo momento. Lo recomiendo.",
-      author: "Ana Peña",
-    },
-    {
-      quote:
-        "Justo hace unos segundos me he ido de la peluquería. Me ha atendido Nadia, me ha hecho el tratamiento de alisado. Han sido las 3,5 horas mejores invertidas del año. Precio muy bueno y resultado que se ve desde el principio. Lo recomiendo mucho.",
-      author: "Sofía Doni",
     },
     {
       quote:
@@ -587,11 +594,6 @@ export const salon = {
       quote:
         "Buen trato, saben escuchar y recomendar, saben hacer diferentes peinados, tanto clásico como modernos. Buenos precios y sitio muy acogedor, como si estuviera en casa.",
       author: "David AC",
-    },
-    {
-      quote:
-        "Me he dado el tinte y Nadia me ha aconsejado. He quedado muy contenta, me ha parecido muy profesional y muy amable, sin duda volveré pronto.",
-      author: "Ángeles Velasco",
     },
   ],
 } as const;

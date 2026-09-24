@@ -21,6 +21,8 @@ async function main() {
   // ── Servicios (desde src/config/salon.ts) ─────────────────────
   for (const [i, s] of salon.services.entries()) {
     const bookableOnline = s.bookableOnline ?? true;
+    const isExtra = s.isExtra ?? false;
+    const priceFrom = s.priceFrom ?? false;
     await prisma.service.upsert({
       where: { slug: s.slug },
       create: {
@@ -31,6 +33,8 @@ async function main() {
         durationMin: s.durationMin,
         category: s.category,
         bookableOnline,
+        isExtra,
+        priceFrom,
         sortOrder: i,
       },
       update: {
@@ -40,6 +44,8 @@ async function main() {
         durationMin: s.durationMin,
         category: s.category,
         bookableOnline,
+        isExtra,
+        priceFrom,
         sortOrder: i,
       },
     });

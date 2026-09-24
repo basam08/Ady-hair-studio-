@@ -17,6 +17,7 @@ export async function GET(req: NextRequest) {
 
   const parsed = availabilityQuerySchema.safeParse({
     service: req.nextUrl.searchParams.get("service") ?? "",
+    extras: req.nextUrl.searchParams.get("extras") ?? undefined,
     stylist: req.nextUrl.searchParams.get("stylist") ?? undefined,
     date: req.nextUrl.searchParams.get("date") ?? "",
   });
@@ -70,11 +71,23 @@ export async function GET(req: NextRequest) {
     stylistId = stylist.id;
   }
 
-  const slots = await getAvailableSlots(parsed.data.date, service.durationMin, stylistId);
+  let durationMin = service.durationMin;
+  const extraSlugs = parsed.data.extras
+    ? parsed.data.extras.split(",").map((s) => s.trim()).filter(Boolean)
+    : [];
+  if (extraSlugs.length > 0) {
+    const extras = await prisma.service.findMany({
+      where: { slug: { in: extraSlugs }, active: true, isExtra: true },
+      select: { durationMin: true },
+    });
+    durationMin += extras.reduce((sum, e) => sum + e.durationMin, 0);
+  }
+
+  const slots = await getAvailableSlots(parsed.data.date, durationMin, stylistId);
   return NextResponse.json({
     date: parsed.data.date,
     service: parsed.data.service,
-    durationMin: service.durationMin,
+    durationMin,
     slots,
   });
 }

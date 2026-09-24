@@ -36,6 +36,12 @@ model Service {
   // Si es false, no se puede reservar online (p. ej. mechas): el cliente
   // debe consultar por WhatsApp antes de que se le asigne un hueco.
   bookableOnline Boolean   @default(true)
+  // Servicio "extra": no se reserva solo, se añade opcionalmente encima de
+  // un servicio principal (p. ej. Planchar).
+  isExtra        Boolean   @default(false)
+  // Si es true, el precio se muestra como "Desde X €" (precio de partida,
+  // el definitivo depende de una valoración presencial).
+  priceFrom      Boolean   @default(false)
   sortOrder      Int       @default(0)
   bookings       Booking[]
 }

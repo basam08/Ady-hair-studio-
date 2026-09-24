@@ -17,6 +17,8 @@ interface ServiceItem {
   durationMin: number;
   category: string;
   bookableOnline: boolean;
+  isExtra: boolean;
+  priceFrom: boolean;
 }
 
 interface StylistItem {
@@ -51,6 +53,10 @@ function isSelectableDay(d: Date, today: Date, maxDate: Date): boolean {
   return (salon.hours[weekday]?.length ?? 0) > 0;
 }
 
+function priceLabel(item: { priceCents: number; priceFrom: boolean }): string {
+  return `${item.priceFrom ? "Desde " : ""}${formatPriceCents(item.priceCents)}`;
+}
+
 export function BookingWizard({
   services,
   stylists,
@@ -60,12 +66,22 @@ export function BookingWizard({
   stylists: StylistItem[];
   initialServiceSlug?: string;
 }) {
+  const primaryServices = useMemo(
+    () => services.filter((s) => !s.isExtra),
+    [services],
+  );
+  const extraServices = useMemo(
+    () => services.filter((s) => s.isExtra),
+    [services],
+  );
+
   const [step, setStep] = useState(1);
   const [serviceSlug, setServiceSlug] = useState<string | null>(
-    initialServiceSlug && services.some((s) => s.slug === initialServiceSlug)
+    initialServiceSlug && primaryServices.some((s) => s.slug === initialServiceSlug)
       ? initialServiceSlug
       : null,
   );
+  const [selectedExtras, setSelectedExtras] = useState<string[]>([]);
   const [stylistSlug, setStylistSlug] = useState<string | null>(null);
   const [whatsAppService, setWhatsAppService] = useState<ServiceItem | null>(
     null,
@@ -92,23 +108,45 @@ export function BookingWizard({
   } | null>(null);
 
   const service = useMemo(
-    () => services.find((s) => s.slug === serviceSlug) ?? null,
-    [services, serviceSlug],
+    () => primaryServices.find((s) => s.slug === serviceSlug) ?? null,
+    [primaryServices, serviceSlug],
   );
   const stylist = useMemo(
     () => stylists.find((s) => s.slug === stylistSlug) ?? null,
     [stylists, stylistSlug],
   );
+  const extras = useMemo(
+    () => extraServices.filter((e) => selectedExtras.includes(e.slug)),
+    [extraServices, selectedExtras],
+  );
+
+  const totalPriceCents = useMemo(
+    () =>
+      (service?.priceCents ?? 0) +
+      extras.reduce((sum, e) => sum + e.priceCents, 0),
+    [service, extras],
+  );
+  const totalDurationMin = useMemo(
+    () =>
+      (service?.durationMin ?? 0) +
+      extras.reduce((sum, e) => sum + e.durationMin, 0),
+    [service, extras],
+  );
+  const combinedName = useMemo(
+    () =>
+      service ? [service.name, ...extras.map((e) => e.name)].join(" + ") : "",
+    [service, extras],
+  );
 
   const grouped = useMemo(() => {
     const map = new Map<string, ServiceItem[]>();
-    for (const s of services) {
+    for (const s of primaryServices) {
       const arr = map.get(s.category) ?? [];
       arr.push(s);
       map.set(s.category, arr);
     }
     return [...map.entries()];
-  }, [services]);
+  }, [primaryServices]);
 
   // Calendario
   const today = useMemo(() => {
@@ -142,6 +180,8 @@ export function BookingWizard({
     return cells;
   }, [viewMonth]);
 
+  const extrasKey = [...selectedExtras].sort().join(",");
+
   // Cargar huecos cuando hay servicio + peluquero + fecha
   useEffect(() => {
     if (!serviceSlug || !stylistSlug || !selectedDate) return;
@@ -149,10 +189,11 @@ export function BookingWizard({
     setLoadingSlots(true);
     setSlots([]);
     setSlot(null);
+    const extrasParam = extrasKey ? `&extras=${encodeURIComponent(extrasKey)}` : "";
     fetch(
       `/api/availability?service=${encodeURIComponent(
         serviceSlug,
-      )}&stylist=${encodeURIComponent(stylistSlug)}&date=${selectedDate}`,
+      )}${extrasParam}&stylist=${encodeURIComponent(stylistSlug)}&date=${selectedDate}`,
     )
       .then((r) => r.json())
       .then((data) => {
@@ -163,7 +204,8 @@ export function BookingWizard({
     return () => {
       cancelled = true;
     };
-  }, [serviceSlug, stylistSlug, selectedDate]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [serviceSlug, stylistSlug, selectedDate, extrasKey]);
 
   function chooseService(s: ServiceItem) {
     if (!s.bookableOnline) {
@@ -172,9 +214,17 @@ export function BookingWizard({
     }
     setWhatsAppService(null);
     setServiceSlug(s.slug);
+    setSelectedExtras([]);
     setStylistSlug(null);
     setSlot(null);
-    setStep(2);
+    if (extraServices.length === 0) setStep(2);
+  }
+
+  function toggleExtra(slug: string) {
+    setSelectedExtras((prev) =>
+      prev.includes(slug) ? prev.filter((s) => s !== slug) : [...prev, slug],
+    );
+    setSlot(null);
   }
 
   function chooseStylist(s: StylistItem) {
@@ -193,6 +243,7 @@ export function BookingWizard({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           serviceSlug: service.slug,
+          extraSlugs: selectedExtras,
           stylistSlug: stylist.slug,
           date: selectedDate,
           time: slot.time,
@@ -304,7 +355,7 @@ export function BookingWizard({
         </div>
       )}
 
-      {/* Paso 1: servicio */}
+      {/* Paso 1: servicio (+ extras opcionales) */}
       {step === 1 && (
         <div>
           {grouped.map(([category, items]) => (
@@ -322,9 +373,7 @@ export function BookingWizard({
                   >
                     <div className="flex items-baseline justify-between gap-3">
                       <span className="font-display text-xl">{s.name}</span>
-                      <span className="u-mono text-sm">
-                        {formatPriceCents(s.priceCents)}
-                      </span>
+                      <span className="u-mono text-sm">{priceLabel(s)}</span>
                     </div>
                     <p className="mt-1 text-sm text-cocoa">{s.description}</p>
                     <p className="u-mono mt-2 text-xs text-cocoa">
@@ -359,13 +408,57 @@ export function BookingWizard({
               </a>
             </div>
           )}
+
+          {service && extraServices.length > 0 && (
+            <fieldset className="mt-2 border border-ink bg-cream p-5">
+              <legend className="u-eyebrow px-1">Extras (opcional)</legend>
+              <div className="mt-2 space-y-2">
+                {extraServices.map((e) => (
+                  <label
+                    key={e.slug}
+                    className="flex cursor-pointer items-center justify-between gap-4 border-b border-line py-2 last:border-b-0"
+                  >
+                    <span className="flex items-center gap-3">
+                      <input
+                        type="checkbox"
+                        checked={selectedExtras.includes(e.slug)}
+                        onChange={() => toggleExtra(e.slug)}
+                      />
+                      <span className="text-sm">{e.name}</span>
+                    </span>
+                    <span className="u-mono text-sm text-cocoa">
+                      + {priceLabel(e)}
+                    </span>
+                  </label>
+                ))}
+              </div>
+              <div className="mt-4 flex items-center justify-between">
+                <span className="u-mono text-sm">
+                  Total: {formatPriceCents(totalPriceCents)} ·{" "}
+                  {formatDuration(totalDurationMin)}
+                </span>
+                <button
+                  type="button"
+                  className="btn btn-primary"
+                  onClick={() => setStep(2)}
+                >
+                  Continuar →
+                </button>
+              </div>
+            </fieldset>
+          )}
         </div>
       )}
 
       {/* Paso 2: peluquero */}
       {step === 2 && service && (
         <div>
-          <SelectedService service={service} onChange={() => setStep(1)} />
+          <SelectedService
+            name={combinedName}
+            priceCents={totalPriceCents}
+            durationMin={totalDurationMin}
+            onChange={() => setStep(1)}
+          />
           <div className="mt-6 grid gap-px border border-line bg-line sm:grid-cols-3">
             {stylists.map((s) => (
               <button
@@ -394,7 +487,12 @@ export function BookingWizard({
       {/* Paso 3: fecha */}
       {step === 3 && service && stylist && (
         <div>
-          <SelectedService service={service} onChange={() => setStep(1)} />
+          <SelectedService
+            name={combinedName}
+            priceCents={totalPriceCents}
+            durationMin={totalDurationMin}
+            onChange={() => setStep(1)}
+          />
           <SelectedStylist stylist={stylist} onChange={() => setStep(2)} />
           <div className="mt-6 max-w-sm">
             <div className="flex items-center justify-between">
@@ -483,7 +581,12 @@ export function BookingWizard({
       {/* Paso 4: hora */}
       {step === 4 && service && stylist && selectedDate && (
         <div>
-          <SelectedService service={service} onChange={() => setStep(1)} />
+          <SelectedService
+            name={combinedName}
+            priceCents={totalPriceCents}
+            durationMin={totalDurationMin}
+            onChange={() => setStep(1)}
+          />
           <SelectedStylist stylist={stylist} onChange={() => setStep(2)} />
           <p className="u-mono mt-4 text-sm">
             {new Date(selectedDate + "T12:00:00").toLocaleDateString("es-ES", {
@@ -541,7 +644,7 @@ export function BookingWizard({
           }}
         >
           <div className="border border-line bg-cream p-5">
-            <p className="font-display text-xl">{service.name}</p>
+            <p className="font-display text-xl">{combinedName}</p>
             <p className="u-mono mt-1 text-sm text-cocoa">
               Con {stylist.name} ·{" "}
               {new Date(slot.startsAt).toLocaleString("es-ES", {
@@ -551,8 +654,8 @@ export function BookingWizard({
                 hour: "2-digit",
                 minute: "2-digit",
               })}{" "}
-              · {formatPriceCents(service.priceCents)} ·{" "}
-              {formatDuration(service.durationMin)}
+              · {formatPriceCents(totalPriceCents)} ·{" "}
+              {formatDuration(totalDurationMin)}
             </p>
           </div>
 
@@ -641,17 +744,21 @@ export function BookingWizard({
 }
 
 function SelectedService({
-  service,
+  name,
+  priceCents,
+  durationMin,
   onChange,
 }: {
-  service: ServiceItem;
+  name: string;
+  priceCents: number;
+  durationMin: number;
   onChange: () => void;
 }) {
   return (
     <div className="flex items-center justify-between border border-line bg-cream px-4 py-3">
       <span className="u-mono text-sm">
-        {service.name} · {formatPriceCents(service.priceCents)} ·{" "}
-        {formatDuration(service.durationMin)}
+        {name} · {formatPriceCents(priceCents)} ·{" "}
+        {formatDuration(durationMin)}
       </span>
       <button
         type="button"

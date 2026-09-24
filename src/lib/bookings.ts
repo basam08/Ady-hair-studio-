@@ -38,6 +38,7 @@ function newToken(): string {
 
 interface CreateInput {
   serviceSlug: string;
+  extraSlugs?: string[];
   stylistSlug: string;
   date: string; // YYYY-MM-DD (hora local del negocio)
   time: string; // HH:MM
@@ -71,6 +72,23 @@ export async function createBooking(
     throw new BookingError("STYLIST_NOT_FOUND", "Peluquero no disponible");
   }
 
+  const extraSlugs = [...new Set(input.extraSlugs ?? [])];
+  const extras =
+    extraSlugs.length > 0
+      ? await prisma.service.findMany({
+          where: { slug: { in: extraSlugs }, active: true, isExtra: true },
+        })
+      : [];
+  if (extras.length !== extraSlugs.length) {
+    throw new BookingError("SERVICE_NOT_FOUND", "Extra no disponible");
+  }
+
+  const totalPriceCents =
+    service.priceCents + extras.reduce((sum, e) => sum + e.priceCents, 0);
+  const totalDurationMin =
+    service.durationMin + extras.reduce((sum, e) => sum + e.durationMin, 0);
+  const combinedName = [service.name, ...extras.map((e) => e.name)].join(" + ");
+
   const [year, month, day] = input.date.split("-").map(Number);
   const [hour, minute] = input.time.split(":").map(Number);
   const startsAt = zonedWallTimeToUtc(
@@ -81,7 +99,7 @@ export async function createBooking(
     hour,
     minute,
   );
-  const endsAt = new Date(startsAt.getTime() + service.durationMin * 60_000);
+  const endsAt = new Date(startsAt.getTime() + totalDurationMin * 60_000);
 
   if (opts.source === "web") {
     const minLead = Date.now() + salon.minLeadHours * 3_600_000;
@@ -117,9 +135,9 @@ export async function createBooking(
         status: "CONFIRMED",
         clientId: client.id,
         serviceId: service.id,
-        serviceName: service.name,
-        priceCents: service.priceCents,
-        durationMin: service.durationMin,
+        serviceName: combinedName,
+        priceCents: totalPriceCents,
+        durationMin: totalDurationMin,
         stylistId: stylist.id,
         startsAt,
         endsAt,
