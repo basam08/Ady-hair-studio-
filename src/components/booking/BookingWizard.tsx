@@ -57,6 +57,8 @@ function priceLabel(item: { priceCents: number; priceFrom: boolean }): string {
   return `${item.priceFrom ? "Desde " : ""}${formatPriceCents(item.priceCents)}`;
 }
 
+const STEP_LABELS = ["Servicio", "Extras", "Peluquero", "Fecha", "Hora", "Datos"];
+
 export function BookingWizard({
   services,
   stylists,
@@ -217,7 +219,7 @@ export function BookingWizard({
     setSelectedExtras([]);
     setStylistSlug(null);
     setSlot(null);
-    if (extraServices.length === 0) setStep(2);
+    setStep(extraServices.length > 0 ? 2 : 3);
   }
 
   function toggleExtra(slug: string) {
@@ -230,7 +232,7 @@ export function BookingWizard({
   function chooseStylist(s: StylistItem) {
     setStylistSlug(s.slug);
     setSlot(null);
-    setStep(3);
+    setStep(4);
   }
 
   async function submit() {
@@ -258,7 +260,7 @@ export function BookingWizard({
       if (!res.ok) {
         setError(data?.error?.message ?? "No se pudo completar la reserva.");
         if (data?.error?.code === "SLOT_TAKEN") {
-          setStep(4);
+          setStep(5);
           setSelectedDate((d) => d); // fuerza recarga de huecos
         }
         return;
@@ -315,35 +317,33 @@ export function BookingWizard({
   return (
     <div>
       {/* Pasos */}
-      <ol className="mb-10 grid grid-cols-5 gap-px border border-line bg-line">
-        {["Servicio", "Peluquero", "Fecha", "Hora", "Datos"].map(
-          (label, i) => {
-            const n = i + 1;
-            const active = step === n;
-            const done = step > n;
-            return (
-              <li
-                key={label}
-                className={`bg-oat px-3 py-3 ${active ? "bg-cream" : ""}`}
+      <ol className="mb-10 grid grid-cols-3 gap-px border border-line bg-line sm:grid-cols-6">
+        {STEP_LABELS.map((label, i) => {
+          const n = i + 1;
+          const active = step === n;
+          const done = step > n;
+          return (
+            <li
+              key={label}
+              className={`bg-oat px-3 py-3 ${active ? "bg-cream" : ""}`}
+            >
+              <span
+                className={`u-mono text-xs ${
+                  active ? "text-persimmon" : done ? "text-ink" : "text-cocoa"
+                }`}
               >
-                <span
-                  className={`u-mono text-xs ${
-                    active ? "text-persimmon" : done ? "text-ink" : "text-cocoa"
-                  }`}
-                >
-                  {String(n).padStart(2, "0")}
-                </span>
-                <p
-                  className={`mt-1 text-sm ${
-                    active ? "text-ink" : "text-cocoa"
-                  }`}
-                >
-                  {label}
-                </p>
-              </li>
-            );
-          },
-        )}
+                {String(n).padStart(2, "0")}
+              </span>
+              <p
+                className={`mt-1 text-sm ${
+                  active ? "text-ink" : "text-cocoa"
+                }`}
+              >
+                {label}
+              </p>
+            </li>
+          );
+        })}
       </ol>
 
       {error && (
@@ -355,34 +355,43 @@ export function BookingWizard({
         </div>
       )}
 
-      {/* Paso 1: servicio (+ extras opcionales) */}
+      {/* Paso 1: servicio */}
       {step === 1 && (
         <div>
           {grouped.map(([category, items]) => (
             <fieldset key={category} className="mb-8">
               <legend className="u-eyebrow mb-3">{category}</legend>
               <div className="grid gap-px border border-line bg-line sm:grid-cols-2">
-                {items.map((s) => (
-                  <button
-                    key={s.slug}
-                    type="button"
-                    onClick={() => chooseService(s)}
-                    className={`bg-oat p-5 text-left transition-colors hover:bg-cream ${
-                      serviceSlug === s.slug ? "bg-cream" : ""
-                    }`}
-                  >
-                    <div className="flex items-baseline justify-between gap-3">
-                      <span className="font-display text-xl">{s.name}</span>
-                      <span className="u-mono text-sm">{priceLabel(s)}</span>
-                    </div>
-                    <p className="mt-1 text-sm text-cocoa">{s.description}</p>
-                    <p className="u-mono mt-2 text-xs text-cocoa">
-                      {s.bookableOnline
-                        ? formatDuration(s.durationMin)
-                        : "Consulta previa por WhatsApp"}
-                    </p>
-                  </button>
-                ))}
+                {items.map((s) => {
+                  const active = serviceSlug === s.slug;
+                  return (
+                    <button
+                      key={s.slug}
+                      type="button"
+                      onClick={() => chooseService(s)}
+                      className={`p-5 text-left transition-colors ${
+                        active ? "bg-ink text-oat" : "bg-oat hover:bg-cream"
+                      }`}
+                    >
+                      <div className="flex items-baseline justify-between gap-3">
+                        <span className="font-display text-xl">{s.name}</span>
+                        <span className="u-mono text-sm">{priceLabel(s)}</span>
+                      </div>
+                      <p
+                        className={`mt-1 text-sm ${active ? "text-oat/70" : "text-cocoa"}`}
+                      >
+                        {s.description}
+                      </p>
+                      <p
+                        className={`u-mono mt-2 text-xs ${active ? "text-oat/70" : "text-cocoa"}`}
+                      >
+                        {s.bookableOnline
+                          ? formatDuration(s.durationMin)
+                          : "Consulta previa por WhatsApp"}
+                      </p>
+                    </button>
+                  );
+                })}
               </div>
             </fieldset>
           ))}
@@ -408,72 +417,73 @@ export function BookingWizard({
               </a>
             </div>
           )}
-
-          {service && extraServices.length > 0 && (
-            <fieldset className="mt-2 border border-ink bg-cream p-5">
-              <legend className="u-eyebrow px-1">Extras (opcional)</legend>
-              <div className="mt-2 space-y-2">
-                {extraServices.map((e) => (
-                  <label
-                    key={e.slug}
-                    className="flex cursor-pointer items-center justify-between gap-4 border-b border-line py-2 last:border-b-0"
-                  >
-                    <span className="flex items-center gap-3">
-                      <input
-                        type="checkbox"
-                        checked={selectedExtras.includes(e.slug)}
-                        onChange={() => toggleExtra(e.slug)}
-                      />
-                      <span className="text-sm">{e.name}</span>
-                    </span>
-                    <span className="u-mono text-sm text-cocoa">
-                      + {priceLabel(e)}
-                    </span>
-                  </label>
-                ))}
-              </div>
-              <div className="mt-4 flex items-center justify-between">
-                <span className="u-mono text-sm">
-                  Total: {formatPriceCents(totalPriceCents)} ·{" "}
-                  {formatDuration(totalDurationMin)}
-                </span>
-                <button
-                  type="button"
-                  className="btn btn-primary"
-                  onClick={() => setStep(2)}
-                >
-                  Continuar →
-                </button>
-              </div>
-            </fieldset>
-          )}
         </div>
       )}
 
-      {/* Paso 2: peluquero */}
+      {/* Paso 2: extras opcionales */}
       {step === 2 && service && (
         <div>
           <SelectedService
-            name={combinedName}
-            priceCents={totalPriceCents}
-            durationMin={totalDurationMin}
+            name={service.name}
+            priceCents={service.priceCents}
+            durationMin={service.durationMin}
             onChange={() => setStep(1)}
           />
-          <div className="mt-6 grid gap-px border border-line bg-line sm:grid-cols-3">
-            {stylists.map((s) => (
+          <fieldset className="mt-6">
+            <legend className="u-eyebrow mb-3">
+              ¿Quieres añadir algún extra? (opcional)
+            </legend>
+            <div className="grid gap-px border border-line bg-line sm:grid-cols-2">
+              {extraServices.map((e) => {
+                const active = selectedExtras.includes(e.slug);
+                return (
+                  <button
+                    key={e.slug}
+                    type="button"
+                    onClick={() => toggleExtra(e.slug)}
+                    aria-pressed={active}
+                    className={`p-5 text-left transition-colors ${
+                      active ? "bg-ink text-oat" : "bg-oat hover:bg-cream"
+                    }`}
+                  >
+                    <div className="flex items-baseline justify-between gap-3">
+                      <span className="font-display text-xl">{e.name}</span>
+                      <span
+                        className={`flex h-6 w-6 shrink-0 items-center justify-center border u-mono text-xs ${
+                          active ? "border-oat bg-oat text-ink" : "border-line"
+                        }`}
+                      >
+                        {active ? "✓" : "+"}
+                      </span>
+                    </div>
+                    <p
+                      className={`mt-1 text-sm ${active ? "text-oat/70" : "text-cocoa"}`}
+                    >
+                      {e.description}
+                    </p>
+                    <p
+                      className={`u-mono mt-2 text-xs ${active ? "text-oat/70" : "text-cocoa"}`}
+                    >
+                      + {priceLabel(e)} · {formatDuration(e.durationMin)}
+                    </p>
+                  </button>
+                );
+              })}
+            </div>
+            <div className="mt-6 flex flex-wrap items-center justify-between gap-3 border border-ink bg-cream px-5 py-4">
+              <span className="u-mono text-sm">
+                Total: {formatPriceCents(totalPriceCents)} ·{" "}
+                {formatDuration(totalDurationMin)}
+              </span>
               <button
-                key={s.slug}
                 type="button"
-                onClick={() => chooseStylist(s)}
-                className={`bg-oat p-5 text-left transition-colors hover:bg-cream ${
-                  stylistSlug === s.slug ? "bg-cream" : ""
-                }`}
+                className="btn btn-primary"
+                onClick={() => setStep(3)}
               >
-                <span className="font-display text-xl">{s.name}</span>
-                <p className="mt-1 text-sm text-cocoa">{s.role}</p>
+                Continuar →
               </button>
-            ))}
-          </div>
+            </div>
+          </fieldset>
           <button
             type="button"
             className="btn btn-ghost mt-8"
@@ -484,8 +494,8 @@ export function BookingWizard({
         </div>
       )}
 
-      {/* Paso 3: fecha */}
-      {step === 3 && service && stylist && (
+      {/* Paso 3: peluquero */}
+      {step === 3 && service && (
         <div>
           <SelectedService
             name={combinedName}
@@ -493,7 +503,46 @@ export function BookingWizard({
             durationMin={totalDurationMin}
             onChange={() => setStep(1)}
           />
-          <SelectedStylist stylist={stylist} onChange={() => setStep(2)} />
+          <div className="mt-6 grid gap-px border border-line bg-line sm:grid-cols-3">
+            {stylists.map((s) => {
+              const active = stylistSlug === s.slug;
+              return (
+                <button
+                  key={s.slug}
+                  type="button"
+                  onClick={() => chooseStylist(s)}
+                  className={`p-5 text-left transition-colors ${
+                    active ? "bg-ink text-oat" : "bg-oat hover:bg-cream"
+                  }`}
+                >
+                  <span className="font-display text-xl">{s.name}</span>
+                  <p className={`mt-1 text-sm ${active ? "text-oat/70" : "text-cocoa"}`}>
+                    {s.role}
+                  </p>
+                </button>
+              );
+            })}
+          </div>
+          <button
+            type="button"
+            className="btn btn-ghost mt-8"
+            onClick={() => setStep(extraServices.length > 0 ? 2 : 1)}
+          >
+            ← Volver
+          </button>
+        </div>
+      )}
+
+      {/* Paso 4: fecha */}
+      {step === 4 && service && stylist && (
+        <div>
+          <SelectedService
+            name={combinedName}
+            priceCents={totalPriceCents}
+            durationMin={totalDurationMin}
+            onChange={() => setStep(1)}
+          />
+          <SelectedStylist stylist={stylist} onChange={() => setStep(3)} />
           <div className="mt-6 max-w-sm">
             <div className="flex items-center justify-between">
               <button
@@ -552,7 +601,7 @@ export function BookingWizard({
                     disabled={!selectable}
                     onClick={() => {
                       setSelectedDate(key);
-                      setStep(4);
+                      setStep(5);
                     }}
                     className={`aspect-square u-mono text-sm transition-colors ${
                       isSelected
@@ -571,15 +620,15 @@ export function BookingWizard({
           <button
             type="button"
             className="btn btn-ghost mt-8"
-            onClick={() => setStep(2)}
+            onClick={() => setStep(3)}
           >
             ← Cambiar peluquero
           </button>
         </div>
       )}
 
-      {/* Paso 4: hora */}
-      {step === 4 && service && stylist && selectedDate && (
+      {/* Paso 5: hora */}
+      {step === 5 && service && stylist && selectedDate && (
         <div>
           <SelectedService
             name={combinedName}
@@ -587,7 +636,7 @@ export function BookingWizard({
             durationMin={totalDurationMin}
             onChange={() => setStep(1)}
           />
-          <SelectedStylist stylist={stylist} onChange={() => setStep(2)} />
+          <SelectedStylist stylist={stylist} onChange={() => setStep(3)} />
           <p className="u-mono mt-4 text-sm">
             {new Date(selectedDate + "T12:00:00").toLocaleDateString("es-ES", {
               weekday: "long",
@@ -611,7 +660,7 @@ export function BookingWizard({
                   type="button"
                   onClick={() => {
                     setSlot(s);
-                    setStep(5);
+                    setStep(6);
                   }}
                   className={`u-mono border border-line py-2 text-sm transition-colors hover:bg-ink hover:text-oat ${
                     slot?.startsAt === s.startsAt
@@ -628,15 +677,15 @@ export function BookingWizard({
           <button
             type="button"
             className="btn btn-ghost mt-8"
-            onClick={() => setStep(3)}
+            onClick={() => setStep(4)}
           >
             ← Cambiar fecha
           </button>
         </div>
       )}
 
-      {/* Paso 5: datos */}
-      {step === 5 && service && stylist && selectedDate && slot && (
+      {/* Paso 6: datos */}
+      {step === 6 && service && stylist && selectedDate && slot && (
         <form
           onSubmit={(e) => {
             e.preventDefault();
@@ -732,7 +781,7 @@ export function BookingWizard({
             <button
               type="button"
               className="btn btn-ghost"
-              onClick={() => setStep(4)}
+              onClick={() => setStep(5)}
             >
               ← Cambiar hora
             </button>
