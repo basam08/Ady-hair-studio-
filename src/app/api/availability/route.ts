@@ -77,7 +77,7 @@ export async function GET(req: NextRequest) {
     : [];
   if (extraSlugs.length > 0) {
     const extras = await prisma.service.findMany({
-      where: { slug: { in: extraSlugs }, active: true, isExtra: true },
+      where: { slug: { in: extraSlugs }, active: true, bookableOnline: true },
       select: { durationMin: true },
     });
     durationMin += extras.reduce((sum, e) => sum + e.durationMin, 0);

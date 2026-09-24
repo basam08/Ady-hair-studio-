@@ -57,7 +57,7 @@ function priceLabel(item: { priceCents: number; priceFrom: boolean }): string {
   return `${item.priceFrom ? "Desde " : ""}${formatPriceCents(item.priceCents)}`;
 }
 
-const STEP_LABELS = ["Servicio", "Extras", "Peluquero", "Fecha", "Hora", "Datos"];
+const STEP_LABELS = ["Servicios", "Extras", "Peluquero", "Fecha", "Hora", "Datos"];
 
 export function BookingWizard({
   services,
@@ -78,10 +78,10 @@ export function BookingWizard({
   );
 
   const [step, setStep] = useState(1);
-  const [serviceSlug, setServiceSlug] = useState<string | null>(
+  const [selectedServiceSlugs, setSelectedServiceSlugs] = useState<string[]>(
     initialServiceSlug && primaryServices.some((s) => s.slug === initialServiceSlug)
-      ? initialServiceSlug
-      : null,
+      ? [initialServiceSlug]
+      : [],
   );
   const [selectedExtras, setSelectedExtras] = useState<string[]>([]);
   const [stylistSlug, setStylistSlug] = useState<string | null>(null);
@@ -109,9 +109,9 @@ export function BookingWizard({
     stylistName: string;
   } | null>(null);
 
-  const service = useMemo(
-    () => primaryServices.find((s) => s.slug === serviceSlug) ?? null,
-    [primaryServices, serviceSlug],
+  const selectedServices = useMemo(
+    () => primaryServices.filter((s) => selectedServiceSlugs.includes(s.slug)),
+    [primaryServices, selectedServiceSlugs],
   );
   const stylist = useMemo(
     () => stylists.find((s) => s.slug === stylistSlug) ?? null,
@@ -121,23 +121,26 @@ export function BookingWizard({
     () => extraServices.filter((e) => selectedExtras.includes(e.slug)),
     [extraServices, selectedExtras],
   );
+  const allItems = useMemo(
+    () => [...selectedServices, ...extras],
+    [selectedServices, extras],
+  );
 
   const totalPriceCents = useMemo(
-    () =>
-      (service?.priceCents ?? 0) +
-      extras.reduce((sum, e) => sum + e.priceCents, 0),
-    [service, extras],
+    () => allItems.reduce((sum, i) => sum + i.priceCents, 0),
+    [allItems],
   );
   const totalDurationMin = useMemo(
-    () =>
-      (service?.durationMin ?? 0) +
-      extras.reduce((sum, e) => sum + e.durationMin, 0),
-    [service, extras],
+    () => allItems.reduce((sum, i) => sum + i.durationMin, 0),
+    [allItems],
   );
   const combinedName = useMemo(
-    () =>
-      service ? [service.name, ...extras.map((e) => e.name)].join(" + ") : "",
-    [service, extras],
+    () => allItems.map((i) => i.name).join(" + "),
+    [allItems],
+  );
+  const servicesLabel = useMemo(
+    () => selectedServices.map((s) => s.name).join(" + "),
+    [selectedServices],
   );
 
   const grouped = useMemo(() => {
@@ -182,19 +185,23 @@ export function BookingWizard({
     return cells;
   }, [viewMonth]);
 
-  const extrasKey = [...selectedExtras].sort().join(",");
+  // Todo lo elegido salvo el primer servicio (que es el "principal" para la
+  // API): el resto de servicios + los extras.
+  const primarySlug = selectedServiceSlugs[0] ?? null;
+  const restSlugs = [...selectedServiceSlugs.slice(1), ...selectedExtras];
+  const restKey = [...restSlugs].sort().join(",");
 
   // Cargar huecos cuando hay servicio + peluquero + fecha
   useEffect(() => {
-    if (!serviceSlug || !stylistSlug || !selectedDate) return;
+    if (!primarySlug || !stylistSlug || !selectedDate) return;
     let cancelled = false;
     setLoadingSlots(true);
     setSlots([]);
     setSlot(null);
-    const extrasParam = extrasKey ? `&extras=${encodeURIComponent(extrasKey)}` : "";
+    const extrasParam = restKey ? `&extras=${encodeURIComponent(restKey)}` : "";
     fetch(
       `/api/availability?service=${encodeURIComponent(
-        serviceSlug,
+        primarySlug,
       )}${extrasParam}&stylist=${encodeURIComponent(stylistSlug)}&date=${selectedDate}`,
     )
       .then((r) => r.json())
@@ -207,18 +214,24 @@ export function BookingWizard({
       cancelled = true;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [serviceSlug, stylistSlug, selectedDate, extrasKey]);
+  }, [primarySlug, stylistSlug, selectedDate, restKey]);
 
-  function chooseService(s: ServiceItem) {
+  function toggleService(s: ServiceItem) {
     if (!s.bookableOnline) {
       setWhatsAppService(s);
       return;
     }
     setWhatsAppService(null);
-    setServiceSlug(s.slug);
-    setSelectedExtras([]);
+    setSelectedServiceSlugs((prev) =>
+      prev.includes(s.slug)
+        ? prev.filter((slug) => slug !== s.slug)
+        : [...prev, s.slug],
+    );
     setStylistSlug(null);
     setSlot(null);
+  }
+
+  function goToStep2() {
     setStep(extraServices.length > 0 ? 2 : 3);
   }
 
@@ -236,7 +249,7 @@ export function BookingWizard({
   }
 
   async function submit() {
-    if (!service || !stylist || !selectedDate || !slot) return;
+    if (!primarySlug || !stylist || !selectedDate || !slot) return;
     setSubmitting(true);
     setError(null);
     try {
@@ -244,8 +257,8 @@ export function BookingWizard({
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          serviceSlug: service.slug,
-          extraSlugs: selectedExtras,
+          serviceSlug: primarySlug,
+          extraSlugs: restSlugs,
           stylistSlug: stylist.slug,
           date: selectedDate,
           time: slot.time,
@@ -355,27 +368,40 @@ export function BookingWizard({
         </div>
       )}
 
-      {/* Paso 1: servicio */}
+      {/* Paso 1: servicios (se puede elegir más de uno) */}
       {step === 1 && (
         <div>
+          <p className="mb-6 max-w-lg text-sm text-cocoa">
+            Puedes elegir más de un servicio para la misma cita — se
+            reservan juntos, uno detrás de otro.
+          </p>
           {grouped.map(([category, items]) => (
             <fieldset key={category} className="mb-8">
               <legend className="u-eyebrow mb-3">{category}</legend>
               <div className="grid gap-px border border-line bg-line sm:grid-cols-2">
                 {items.map((s) => {
-                  const active = serviceSlug === s.slug;
+                  const active = selectedServiceSlugs.includes(s.slug);
                   return (
                     <button
                       key={s.slug}
                       type="button"
-                      onClick={() => chooseService(s)}
+                      onClick={() => toggleService(s)}
+                      aria-pressed={active}
                       className={`p-5 text-left transition-colors ${
                         active ? "bg-ink text-oat" : "bg-oat hover:bg-cream"
                       }`}
                     >
                       <div className="flex items-baseline justify-between gap-3">
                         <span className="font-display text-xl">{s.name}</span>
-                        <span className="u-mono text-sm">{priceLabel(s)}</span>
+                        {s.bookableOnline && (
+                          <span
+                            className={`flex h-6 w-6 shrink-0 items-center justify-center border u-mono text-xs ${
+                              active ? "border-oat bg-oat text-ink" : "border-line"
+                            }`}
+                          >
+                            {active ? "✓" : "+"}
+                          </span>
+                        )}
                       </div>
                       <p
                         className={`mt-1 text-sm ${active ? "text-oat/70" : "text-cocoa"}`}
@@ -386,7 +412,7 @@ export function BookingWizard({
                         className={`u-mono mt-2 text-xs ${active ? "text-oat/70" : "text-cocoa"}`}
                       >
                         {s.bookableOnline
-                          ? formatDuration(s.durationMin)
+                          ? `${priceLabel(s)} · ${formatDuration(s.durationMin)}`
                           : "Consulta previa por WhatsApp"}
                       </p>
                     </button>
@@ -417,16 +443,33 @@ export function BookingWizard({
               </a>
             </div>
           )}
+
+          {selectedServices.length > 0 && (
+            <div className="sticky bottom-4 mt-2 flex flex-wrap items-center justify-between gap-3 border border-ink bg-cream px-5 py-4 shadow-md">
+              <span className="u-mono text-sm">
+                {servicesLabel} · {formatPriceCents(
+                  selectedServices.reduce((s, i) => s + i.priceCents, 0),
+                )}{" "}
+                ·{" "}
+                {formatDuration(
+                  selectedServices.reduce((s, i) => s + i.durationMin, 0),
+                )}
+              </span>
+              <button type="button" className="btn btn-primary" onClick={goToStep2}>
+                Continuar →
+              </button>
+            </div>
+          )}
         </div>
       )}
 
       {/* Paso 2: extras opcionales */}
-      {step === 2 && service && (
+      {step === 2 && selectedServices.length > 0 && (
         <div>
           <SelectedService
-            name={service.name}
-            priceCents={service.priceCents}
-            durationMin={service.durationMin}
+            name={servicesLabel}
+            priceCents={selectedServices.reduce((s, i) => s + i.priceCents, 0)}
+            durationMin={selectedServices.reduce((s, i) => s + i.durationMin, 0)}
             onChange={() => setStep(1)}
           />
           <fieldset className="mt-6">
@@ -489,13 +532,13 @@ export function BookingWizard({
             className="btn btn-ghost mt-8"
             onClick={() => setStep(1)}
           >
-            ← Cambiar servicio
+            ← Cambiar servicios
           </button>
         </div>
       )}
 
       {/* Paso 3: peluquero */}
-      {step === 3 && service && (
+      {step === 3 && selectedServices.length > 0 && (
         <div>
           <SelectedService
             name={combinedName}
@@ -534,7 +577,7 @@ export function BookingWizard({
       )}
 
       {/* Paso 4: fecha */}
-      {step === 4 && service && stylist && (
+      {step === 4 && selectedServices.length > 0 && stylist && (
         <div>
           <SelectedService
             name={combinedName}
@@ -628,7 +671,7 @@ export function BookingWizard({
       )}
 
       {/* Paso 5: hora */}
-      {step === 5 && service && stylist && selectedDate && (
+      {step === 5 && selectedServices.length > 0 && stylist && selectedDate && (
         <div>
           <SelectedService
             name={combinedName}
@@ -685,7 +728,7 @@ export function BookingWizard({
       )}
 
       {/* Paso 6: datos */}
-      {step === 6 && service && stylist && selectedDate && slot && (
+      {step === 6 && selectedServices.length > 0 && stylist && selectedDate && slot && (
         <form
           onSubmit={(e) => {
             e.preventDefault();

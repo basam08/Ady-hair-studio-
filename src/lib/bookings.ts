@@ -72,11 +72,18 @@ export async function createBooking(
     throw new BookingError("STYLIST_NOT_FOUND", "Peluquero no disponible");
   }
 
-  const extraSlugs = [...new Set(input.extraSlugs ?? [])];
+  // "extraSlugs" cubre tanto extras de verdad (isExtra, p. ej. Planchar)
+  // como otros servicios completos añadidos a la misma reserva (un
+  // cliente puede reservar más de un servicio de una vez). Se exige
+  // bookableOnline para que nadie cuele un servicio de solo-WhatsApp
+  // (mechas, etc.) por esta vía.
+  const extraSlugs = [...new Set(input.extraSlugs ?? [])].filter(
+    (slug) => slug !== input.serviceSlug,
+  );
   const extras =
     extraSlugs.length > 0
       ? await prisma.service.findMany({
-          where: { slug: { in: extraSlugs }, active: true, isExtra: true },
+          where: { slug: { in: extraSlugs }, active: true, bookableOnline: true },
         })
       : [];
   if (extras.length !== extraSlugs.length) {
