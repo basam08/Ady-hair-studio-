@@ -155,7 +155,7 @@ export default function HomePage() {
         </div>
 
         <div className="mt-10">
-          <GalleryGrid items={salon.gallery.slice(0, 3)} />
+          <GalleryGrid items={salon.gallery.slice(0, 4)} />
         </div>
       </section>
 

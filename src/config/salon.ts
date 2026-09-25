@@ -489,7 +489,7 @@ export const salon = {
     {
       title: "Peinado con movimiento",
       category: "Peinado",
-      image: "/gallery/recogido-novia.jpg",
+      image: "/gallery/peinado-flores.jpg",
     },
     {
       title: "Baby light rubio ceniza",
@@ -497,24 +497,19 @@ export const salon = {
       image: "/gallery/rubio-ceniza.jpg",
     },
     {
-      title: "Alisado de queratina",
-      category: "Cuidado",
-      image: "/gallery/lisa-caoba.jpg",
+      title: "Peinado con ondas",
+      category: "Peinado",
+      image: "/gallery/ondas-caramelo.jpg",
     },
     {
-      title: "Rubios",
+      title: "Rizos dorados",
       category: "Color",
-      image: "/gallery/rubio-dorado-liso.jpg",
+      image: "/gallery/rizos-dorados.jpg",
     },
     {
       title: "Cobrizos",
       category: "Color",
       image: "/gallery/pelirrojo-flequillo.jpg",
-    },
-    {
-      title: "Peinado con ondas",
-      category: "Peinado",
-      image: "/gallery/ondas-caramelo.jpg",
     },
     {
       title: "Peinado niña comunión",
@@ -530,6 +525,21 @@ export const salon = {
       title: "Taper fade",
       category: "Barbería",
       image: "/gallery/fade-afro.jpg",
+    },
+    {
+      title: "Alisado de queratina",
+      category: "Cuidado",
+      image: "/gallery/lisa-caoba.jpg",
+    },
+    {
+      title: "Recogido con rizos",
+      category: "Peinado",
+      image: "/gallery/recogido-novia.jpg",
+    },
+    {
+      title: "Rubios",
+      category: "Color",
+      image: "/gallery/rubio-dorado-liso.jpg",
     },
     {
       title: "Balayage miel",
@@ -550,16 +560,6 @@ export const salon = {
       title: "Corte bob rubio",
       category: "Corte",
       image: "/gallery/bob-rubio.jpg",
-    },
-    {
-      title: "Rizos dorados",
-      category: "Color",
-      image: "/gallery/rizos-dorados.jpg",
-    },
-    {
-      title: "Peinado con flores",
-      category: "Peinado",
-      image: "/gallery/peinado-flores.jpg",
     },
     {
       title: "Corte niño",
