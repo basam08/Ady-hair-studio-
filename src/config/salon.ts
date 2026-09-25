@@ -487,19 +487,54 @@ export const salon = {
   // Fotos reales de trabajos del estudio.
   gallery: [
     {
-      title: "Balayage miel",
-      category: "Color",
-      image: "/gallery/balayage-miel.jpg",
-    },
-    {
       title: "Peinado con movimiento",
       category: "Peinado",
       image: "/gallery/recogido-novia.jpg",
     },
     {
-      title: "Rubio ceniza",
+      title: "Baby light rubio ceniza",
       category: "Color",
       image: "/gallery/rubio-ceniza.jpg",
+    },
+    {
+      title: "Alisado de queratina",
+      category: "Cuidado",
+      image: "/gallery/lisa-caoba.jpg",
+    },
+    {
+      title: "Rubios",
+      category: "Color",
+      image: "/gallery/rubio-dorado-liso.jpg",
+    },
+    {
+      title: "Cobrizos",
+      category: "Color",
+      image: "/gallery/pelirrojo-flequillo.jpg",
+    },
+    {
+      title: "Peinado con ondas",
+      category: "Peinado",
+      image: "/gallery/ondas-caramelo.jpg",
+    },
+    {
+      title: "Peinado niña comunión",
+      category: "Niños",
+      image: "/gallery/nina-flores.jpg",
+    },
+    {
+      title: "Low fade",
+      category: "Barbería",
+      image: "/gallery/corte-maquina.jpg",
+    },
+    {
+      title: "Taper fade",
+      category: "Barbería",
+      image: "/gallery/fade-afro.jpg",
+    },
+    {
+      title: "Balayage miel",
+      category: "Color",
+      image: "/gallery/balayage-miel.jpg",
     },
     {
       title: "Balayage dorado",
@@ -517,21 +552,6 @@ export const salon = {
       image: "/gallery/bob-rubio.jpg",
     },
     {
-      title: "Pelirrojo con flequillo",
-      category: "Color",
-      image: "/gallery/pelirrojo-flequillo.jpg",
-    },
-    {
-      title: "Ondas caramelo",
-      category: "Color",
-      image: "/gallery/ondas-caramelo.jpg",
-    },
-    {
-      title: "Melena lisa caoba",
-      category: "Color",
-      image: "/gallery/lisa-caoba.jpg",
-    },
-    {
       title: "Rizos dorados",
       category: "Color",
       image: "/gallery/rizos-dorados.jpg",
@@ -540,21 +560,6 @@ export const salon = {
       title: "Peinado con flores",
       category: "Peinado",
       image: "/gallery/peinado-flores.jpg",
-    },
-    {
-      title: "Corte niña con flores",
-      category: "Niños",
-      image: "/gallery/nina-flores.jpg",
-    },
-    {
-      title: "Fade afro",
-      category: "Barbería",
-      image: "/gallery/fade-afro.jpg",
-    },
-    {
-      title: "Corte a máquina",
-      category: "Barbería",
-      image: "/gallery/corte-maquina.jpg",
     },
     {
       title: "Corte niño",
@@ -570,11 +575,6 @@ export const salon = {
       title: "Dentro del estudio",
       category: "Estudio",
       image: "/gallery/estudio-interior.jpg",
-    },
-    {
-      title: "Rubio dorado liso",
-      category: "Color",
-      image: "/gallery/rubio-dorado-liso.jpg",
     },
   ] satisfies GalleryItem[],
 
