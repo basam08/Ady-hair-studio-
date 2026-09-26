@@ -14,6 +14,7 @@ import {
   createCalendarEvent,
   deleteCalendarEvent,
 } from "@/lib/integrations/google-calendar";
+import { appendBookingRow } from "@/lib/integrations/google-sheets";
 
 export class BookingError extends Error {
   constructor(
@@ -188,6 +189,18 @@ export async function createBooking(
   }
 
   await notifyBookingConfirmed(fullWithStylist);
+  await appendBookingRow([
+    new Date().toLocaleString("es-ES", { timeZone: salon.timeZone }),
+    full.client.name,
+    full.client.phone,
+    full.serviceName,
+    stylist.name,
+    input.date,
+    input.time,
+    (full.priceCents / 100).toFixed(2) + " €",
+    "Confirmada",
+    full.clientNote ?? "",
+  ]);
   return booking;
 }
 

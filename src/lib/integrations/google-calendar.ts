@@ -1,9 +1,8 @@
 import "server-only";
-import { SignJWT, importPKCS8 } from "jose";
+import { getGoogleAccessToken, hasGoogleServiceAccount } from "./google-auth";
 
 /**
  * Sincronización con Google Calendar mediante una cuenta de servicio.
- * Sin SDK: se firma un JWT y se pide un access token OAuth2.
  *
  * Configuración necesaria (ver .env.example):
  *   GOOGLE_CALENDAR_ID
@@ -16,49 +15,7 @@ import { SignJWT, importPKCS8 } from "jose";
 const SCOPE = "https://www.googleapis.com/auth/calendar.events";
 
 function isConfigured(): boolean {
-  return Boolean(
-    process.env.GOOGLE_CALENDAR_ID &&
-      process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL &&
-      process.env.GOOGLE_SERVICE_ACCOUNT_PRIVATE_KEY,
-  );
-}
-
-async function getAccessToken(): Promise<string | null> {
-  if (!isConfigured()) return null;
-  try {
-    const email = process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL!;
-    const rawKey = process.env
-      .GOOGLE_SERVICE_ACCOUNT_PRIVATE_KEY!.replace(/\\n/g, "\n");
-    const key = await importPKCS8(rawKey, "RS256");
-
-    const now = Math.floor(Date.now() / 1000);
-    const assertion = await new SignJWT({ scope: SCOPE })
-      .setProtectedHeader({ alg: "RS256", typ: "JWT" })
-      .setIssuer(email)
-      .setSubject(email)
-      .setAudience("https://oauth2.googleapis.com/token")
-      .setIssuedAt(now)
-      .setExpirationTime(now + 3600)
-      .sign(key);
-
-    const res = await fetch("https://oauth2.googleapis.com/token", {
-      method: "POST",
-      headers: { "Content-Type": "application/x-www-form-urlencoded" },
-      body: new URLSearchParams({
-        grant_type: "urn:ietf:params:oauth:grant-type:jwt-bearer",
-        assertion,
-      }),
-    });
-    if (!res.ok) {
-      console.error("[gcal] token error", res.status);
-      return null;
-    }
-    const data = (await res.json()) as { access_token?: string };
-    return data.access_token ?? null;
-  } catch (err) {
-    console.error("[gcal] token fallo:", (err as Error).message);
-    return null;
-  }
+  return Boolean(hasGoogleServiceAccount() && process.env.GOOGLE_CALENDAR_ID);
 }
 
 export interface CalendarEventInput {
@@ -72,11 +29,12 @@ export interface CalendarEventInput {
 export async function createCalendarEvent(
   input: CalendarEventInput,
 ): Promise<string | null> {
-  const token = await getAccessToken();
-  if (!token) {
+  if (!isConfigured()) {
     console.info(`[gcal:mock] evento «${input.summary}» ${input.startIso}`);
     return null;
   }
+  const token = await getGoogleAccessToken(SCOPE);
+  if (!token) return null;
   const calendarId = encodeURIComponent(process.env.GOOGLE_CALENDAR_ID!);
   try {
     const res = await fetch(
@@ -108,7 +66,7 @@ export async function createCalendarEvent(
 }
 
 export async function deleteCalendarEvent(eventId: string): Promise<void> {
-  const token = await getAccessToken();
+  const token = await getGoogleAccessToken(SCOPE);
   if (!token) return;
   const calendarId = encodeURIComponent(process.env.GOOGLE_CALENDAR_ID!);
   try {
