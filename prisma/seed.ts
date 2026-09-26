@@ -7,7 +7,7 @@ const prisma = new PrismaClient();
 
 async function main() {
   // ── Administrador ─────────────────────────────────────────────
-  const email = (process.env.ADMIN_EMAIL ?? "ady@adyhaircut.com").toLowerCase();
+  const email = (process.env.ADMIN_EMAIL ?? "info@adyhairstudio.com").toLowerCase();
   const password = process.env.ADMIN_PASSWORD ?? "AdyDemo2026!";
   const passwordHash = await bcrypt.hash(password, 12);
 
