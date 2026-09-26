@@ -63,6 +63,8 @@ model Client {
   email     String?
   notes     String?
   createdAt DateTime  @default(now())
+  // En la papelera (soft-delete); se purga sola a los 30 días.
+  deletedAt DateTime?
   bookings  Booking[]
 }
 
@@ -97,6 +99,8 @@ model Booking {
 
   createdAt     DateTime      @default(now())
   updatedAt     DateTime      @updatedAt
+  // En la papelera (soft-delete); se purga sola a los 30 días.
+  deletedAt     DateTime?
 
   @@index([startsAt])
   @@index([status])

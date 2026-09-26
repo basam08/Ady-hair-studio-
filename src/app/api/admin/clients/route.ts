@@ -8,15 +8,18 @@ export const GET = withAdmin(async (req: NextRequest) => {
   const q = req.nextUrl.searchParams.get("q")?.trim();
 
   const clients = await prisma.client.findMany({
-    where: q
-      ? {
-          OR: [
-            { name: { contains: q } },
-            { phone: { contains: q } },
-            { email: { contains: q } },
-          ],
-        }
-      : undefined,
+    where: {
+      deletedAt: null,
+      ...(q
+        ? {
+            OR: [
+              { name: { contains: q } },
+              { phone: { contains: q } },
+              { email: { contains: q } },
+            ],
+          }
+        : {}),
+    },
     orderBy: { createdAt: "desc" },
     take: 300,
     include: {

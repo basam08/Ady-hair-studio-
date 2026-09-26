@@ -18,15 +18,17 @@ export const GET = withAdmin(async (req: NextRequest) => {
   if (to && !isValidDateKey(to)) return jsonError("BAD_RANGE", "to no válido", 422);
 
   const bookings = await prisma.booking.findMany({
-    where:
-      from || to
+    where: {
+      deletedAt: null,
+      ...(from || to
         ? {
             startsAt: {
               ...(from ? { gte: new Date(`${from}T00:00:00.000Z`) } : {}),
               ...(to ? { lt: new Date(`${to}T23:59:59.999Z`) } : {}),
             },
           }
-        : undefined,
+        : {}),
+    },
     orderBy: { startsAt: "asc" },
     include: { client: true, stylist: { select: { name: true } } },
     take: 5000,

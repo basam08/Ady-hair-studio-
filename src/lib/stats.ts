@@ -44,6 +44,7 @@ export async function getDashboardStats(): Promise<DashboardStats> {
     await Promise.all([
       prisma.booking.findMany({
         where: {
+          deletedAt: null,
           status: { in: ["CONFIRMED", "COMPLETED"] },
           startsAt: { gte: startOfToday, lt: endOfToday },
         },
@@ -52,19 +53,20 @@ export async function getDashboardStats(): Promise<DashboardStats> {
       }),
       prisma.booking.findMany({
         where: {
+          deletedAt: null,
           status: { in: ["CONFIRMED", "COMPLETED"] },
           startsAt: { gte: weekAgo, lt: now },
         },
         select: { priceCents: true },
       }),
       prisma.booking.findMany({
-        where: { status: "CONFIRMED", startsAt: { gte: now, lt: in7 } },
+        where: { deletedAt: null, status: "CONFIRMED", startsAt: { gte: now, lt: in7 } },
         select: { durationMin: true },
       }),
-      prisma.client.count({ where: { createdAt: { gte: startOfMonth } } }),
+      prisma.client.count({ where: { deletedAt: null, createdAt: { gte: startOfMonth } } }),
       prisma.booking.groupBy({
         by: ["serviceName"],
-        where: { startsAt: { gte: startOfMonth } },
+        where: { deletedAt: null, startsAt: { gte: startOfMonth } },
         _count: { _all: true },
         _sum: { priceCents: true },
       }),

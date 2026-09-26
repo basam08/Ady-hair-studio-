@@ -69,6 +69,7 @@ export async function getAvailableSlots(
   const [bookings, blackouts, activeStylists] = await Promise.all([
     prisma.booking.findMany({
       where: {
+        deletedAt: null,
         status: "CONFIRMED",
         ...(stylistId ? { stylistId } : {}),
         startsAt: { lt: windowEnd },
@@ -175,6 +176,7 @@ export async function isStylistSlotFree(
 
   const conflicts = await tx.booking.findMany({
     where: {
+      deletedAt: null,
       status: "CONFIRMED",
       stylistId,
       ...(excludeBookingId ? { id: { not: excludeBookingId } } : {}),
@@ -215,6 +217,7 @@ export async function isPooledSlotFree(
   const [conflicts, activeStylists] = await Promise.all([
     tx.booking.findMany({
       where: {
+        deletedAt: null,
         status: "CONFIRMED",
         id: { not: excludeBookingId },
         startsAt: { lt: paddedEnd },

@@ -16,7 +16,7 @@ export const GET = withAdmin(async (req: NextRequest) => {
   if (from && !isValidDateKey(from)) return jsonError("BAD_RANGE", "from no válido", 422);
   if (to && !isValidDateKey(to)) return jsonError("BAD_RANGE", "to no válido", 422);
 
-  const where: Record<string, unknown> = {};
+  const where: Record<string, unknown> = { deletedAt: null };
   if (from || to) {
     where.startsAt = {
       ...(from ? { gte: new Date(`${from}T00:00:00.000Z`) } : {}),

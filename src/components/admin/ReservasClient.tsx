@@ -222,7 +222,7 @@ export function ReservasClient({
                             onClick={() => setBookingStatus(b.id, "COMPLETED")}
                             className="u-mono text-xs uppercase link-underline"
                           >
-                            Completar
+                            Completado
                           </button>
                           <button
                             type="button"
