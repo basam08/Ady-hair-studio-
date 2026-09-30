@@ -8,6 +8,7 @@ const LINKS = [
   { href: "/admin/reservas", label: "Reservas" },
   { href: "/admin/disponibilidad", label: "Disponibilidad" },
   { href: "/admin/clientes", label: "Clientes" },
+  { href: "/admin/vip", label: "VIP" },
 ];
 
 export function AdminNav({ name }: { name: string }) {

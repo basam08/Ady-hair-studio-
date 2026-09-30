@@ -75,6 +75,19 @@ export const bookingStatusSchema = z.object({
   status: z.enum(["CONFIRMED", "CANCELLED", "COMPLETED", "NO_SHOW"]),
 });
 
+export const vipClientCreateSchema = z.object({
+  name: z.string().trim().min(2, "Escribe el nombre").max(80),
+  hairColor: z.string().trim().min(2, "Describe el color").max(120),
+  colorHex: z
+    .string()
+    .trim()
+    .regex(/^#[0-9a-fA-F]{6}$/, "Color no válido")
+    .optional()
+    .or(z.literal("")),
+  phone: z.string().trim().max(20).optional().or(z.literal("")),
+  notes: z.string().trim().max(500).optional().or(z.literal("")),
+});
+
 export const adminBookingCreateSchema = z.object({
   serviceSlug: z.string().trim().min(1).max(64),
   stylistSlug: z.string().trim().min(1).max(64),

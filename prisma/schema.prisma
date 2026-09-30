@@ -24,6 +24,19 @@ model Admin {
   createdAt    DateTime @default(now())
 }
 
+// Ficha manual de clientes VIP (no viene de las reservas): el dueño
+// apunta quién es, qué mezcla de color de pelo usa y notas propias.
+model VipClient {
+  id           String   @id @default(cuid())
+  name         String
+  hairColor    String
+  colorHex     String?
+  phone        String?
+  notes        String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
 model Service {
   id             String    @id @default(cuid())
   slug           String    @unique
