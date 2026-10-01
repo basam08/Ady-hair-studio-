@@ -5,6 +5,7 @@ import { sendEmail } from "@/lib/integrations/email";
 import { sendWhatsApp } from "@/lib/integrations/whatsapp";
 import {
   bookingConfirmedHtml,
+  bookingRescheduledHtml,
   bookingCancelledHtml,
   bookingReminderHtml,
 } from "@/lib/email-templates";
@@ -67,6 +68,52 @@ export async function notifyBookingConfirmed(b: BookingLike): Promise<void> {
     sendWhatsApp(
       b.client.phone,
       `✂️ ${salon.name}: cita confirmada para ${b.serviceName} el ${fecha} a las ${hora}. Gestiona tu cita: ${link}`,
+    ),
+  ]);
+}
+
+export async function notifyBookingRescheduled(
+  b: BookingLike,
+  prev: { fechaAnterior: string; horaAnterior: string },
+): Promise<void> {
+  const fecha = formatDateInZone(salon.timeZone, b.startsAt);
+  const hora = formatTimeInZone(salon.timeZone, b.startsAt);
+  const link = manageLink(b.manageToken);
+
+  const text = [
+    `Hola ${b.client.name},`,
+    ``,
+    `Tu cita en ${salon.name} ha cambiado de hora.`,
+    `· Antes: ${prev.fechaAnterior} a las ${prev.horaAnterior}`,
+    `· Ahora: ${fecha} a las ${hora}`,
+    `· Servicio: ${b.serviceName}`,
+    ...(b.stylist ? [`· Con: ${b.stylist.name}`] : []),
+    ``,
+    `¿No te viene bien? Cámbiala o cancélala aquí: ${link}`,
+  ].join("\n");
+
+  await Promise.allSettled([
+    b.client.email
+      ? sendEmail({
+          to: b.client.email,
+          subject: `Tu cita ha cambiado de hora · ${salon.name}`,
+          text,
+          html: bookingRescheduledHtml({
+            clientName: b.client.name,
+            serviceName: b.serviceName,
+            stylistName: b.stylist?.name,
+            priceCents: b.priceCents,
+            fecha,
+            hora,
+            manageUrl: link,
+            fechaAnterior: prev.fechaAnterior,
+            horaAnterior: prev.horaAnterior,
+          }),
+        })
+      : Promise.resolve(),
+    sendWhatsApp(
+      b.client.phone,
+      `✂️ ${salon.name}: tu cita ha cambiado, ahora es el ${fecha} a las ${hora} (antes ${prev.fechaAnterior} ${prev.horaAnterior}). Gestiona tu cita: ${link}`,
     ),
   ]);
 }

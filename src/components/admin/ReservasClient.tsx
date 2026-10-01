@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { Fragment, useCallback, useEffect, useState } from "react";
 import { salon, formatPriceCents } from "@/config/salon";
 import { formatTimeInZone } from "@/lib/time";
 
@@ -57,6 +57,10 @@ export function ReservasClient({
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [loading, setLoading] = useState(true);
   const [showNew, setShowNew] = useState(false);
+  const [reschedulingId, setReschedulingId] = useState<string | null>(null);
+  const [rescheduleForm, setRescheduleForm] = useState({ date: "", time: "" });
+  const [rescheduleError, setRescheduleError] = useState<string | null>(null);
+  const [rescheduleBusy, setRescheduleBusy] = useState(false);
 
   const load = useCallback(() => {
     setLoading(true);
@@ -78,6 +82,37 @@ export function ReservasClient({
       body: JSON.stringify({ status: next }),
     });
     if (res.ok) load();
+  }
+
+  function startReschedule(b: Booking) {
+    const d = new Date(b.startsAt);
+    setReschedulingId(b.id);
+    setRescheduleError(null);
+    setRescheduleForm({
+      date: dateKey(d),
+      time: formatTimeInZone(salon.timeZone, d),
+    });
+  }
+
+  async function submitReschedule(id: string) {
+    setRescheduleError(null);
+    setRescheduleBusy(true);
+    try {
+      const res = await fetch(`/api/admin/bookings/${id}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(rescheduleForm),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setRescheduleError(data?.error?.message ?? "No se pudo cambiar la cita.");
+        return;
+      }
+      setReschedulingId(null);
+      load();
+    } finally {
+      setRescheduleBusy(false);
+    }
   }
 
   const { from, to } = rangeFor(preset);
@@ -168,7 +203,8 @@ export function ReservasClient({
               bookings.map((b) => {
                 const d = new Date(b.startsAt);
                 return (
-                  <tr key={b.id} className="align-top">
+                  <Fragment key={b.id}>
+                  <tr className="align-top">
                     <td className="border-b border-line py-3 pr-3">
                       <span className="u-mono">
                         {d.toLocaleDateString("es-ES", {
@@ -219,6 +255,13 @@ export function ReservasClient({
                         <div className="flex flex-col items-end gap-1">
                           <button
                             type="button"
+                            onClick={() => startReschedule(b)}
+                            className="u-mono text-xs uppercase link-underline"
+                          >
+                            Cambiar fecha/hora
+                          </button>
+                          <button
+                            type="button"
                             onClick={() => setBookingStatus(b.id, "COMPLETED")}
                             className="u-mono text-xs uppercase link-underline"
                           >
@@ -251,6 +294,57 @@ export function ReservasClient({
                       )}
                     </td>
                   </tr>
+                  {reschedulingId === b.id && (
+                    <tr>
+                      <td colSpan={5} className="border-b border-line bg-cream py-3">
+                        <div className="flex flex-wrap items-end gap-3">
+                          {rescheduleError && (
+                            <p className="w-full border border-persimmon bg-persimmon/10 px-3 py-2 text-sm text-persimmon-dark">
+                              {rescheduleError}
+                            </p>
+                          )}
+                          <label className="block">
+                            <span className="field-label">Nueva fecha</span>
+                            <input
+                              type="date"
+                              className="field"
+                              value={rescheduleForm.date}
+                              onChange={(e) =>
+                                setRescheduleForm({ ...rescheduleForm, date: e.target.value })
+                              }
+                            />
+                          </label>
+                          <label className="block">
+                            <span className="field-label">Nueva hora</span>
+                            <input
+                              type="time"
+                              className="field"
+                              value={rescheduleForm.time}
+                              onChange={(e) =>
+                                setRescheduleForm({ ...rescheduleForm, time: e.target.value })
+                              }
+                            />
+                          </label>
+                          <button
+                            type="button"
+                            className="btn btn-primary"
+                            disabled={rescheduleBusy}
+                            onClick={() => submitReschedule(b.id)}
+                          >
+                            {rescheduleBusy ? "Guardando…" : "Guardar y avisar al cliente"}
+                          </button>
+                          <button
+                            type="button"
+                            className="u-mono text-xs uppercase link-underline"
+                            onClick={() => setReschedulingId(null)}
+                          >
+                            Cancelar
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  )}
+                  </Fragment>
                 );
               })
             )}

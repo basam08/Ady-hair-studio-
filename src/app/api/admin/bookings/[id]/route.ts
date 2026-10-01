@@ -1,9 +1,10 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { prisma } from "@/lib/db";
 import { withAdmin, jsonError } from "@/lib/api";
-import { bookingStatusSchema } from "@/lib/validation";
+import { bookingStatusSchema, bookingRescheduleSchema } from "@/lib/validation";
 import { deleteCalendarEvent } from "@/lib/integrations/google-calendar";
 import { notifyBookingCancelled } from "@/lib/notifications";
+import { rescheduleBookingById, BookingError } from "@/lib/bookings";
 
 export const dynamic = "force-dynamic";
 
@@ -40,6 +41,44 @@ export const PATCH = withAdmin(
     }
 
     return NextResponse.json({ ok: true, status: updated.status });
+  },
+);
+
+export const POST = withAdmin(
+  async (
+    req: NextRequest,
+    { params }: { params: Promise<{ id: string }> },
+  ) => {
+    const { id } = await params;
+    let body: unknown;
+    try {
+      body = await req.json();
+    } catch {
+      return jsonError("BAD_JSON", "Cuerpo no válido", 400);
+    }
+    const parsed = bookingRescheduleSchema.safeParse(body);
+    if (!parsed.success) {
+      return NextResponse.json(
+        { error: { code: "VALIDATION_ERROR", message: "Fecha u hora no válidas", details: parsed.error.flatten() } },
+        { status: 422 },
+      );
+    }
+
+    try {
+      const updated = await rescheduleBookingById(id, parsed.data.date, parsed.data.time);
+      return NextResponse.json({
+        ok: true,
+        startsAt: updated.startsAt.toISOString(),
+        endsAt: updated.endsAt.toISOString(),
+      });
+    } catch (err) {
+      if (err instanceof BookingError) {
+        const status =
+          err.code === "SLOT_TAKEN" ? 409 : err.code === "NOT_FOUND" ? 404 : 422;
+        return jsonError(err.code, err.message, status);
+      }
+      throw err;
+    }
   },
 );
 

@@ -4,11 +4,16 @@ import type { Booking } from "@prisma/client";
 import { salon, canStylistPerform } from "@/config/salon";
 import { prisma } from "@/lib/db";
 import { isStylistSlotFree, isPooledSlotFree } from "@/lib/availability";
-import { zonedWallTimeToUtc } from "@/lib/time";
+import {
+  zonedWallTimeToUtc,
+  formatDateInZone,
+  formatTimeInZone,
+} from "@/lib/time";
 import { normalizePhone } from "@/lib/validation";
 import {
   notifyBookingCancelled,
   notifyBookingConfirmed,
+  notifyBookingRescheduled,
 } from "@/lib/notifications";
 import {
   createCalendarEvent,
@@ -222,19 +227,22 @@ export async function cancelBookingByToken(token: string): Promise<void> {
   await notifyBookingCancelled(booking);
 }
 
-export async function rescheduleBookingByToken(
-  token: string,
+type BookingWithClientAndStylist = Booking & {
+  client: { name: string; email: string | null; phone: string };
+  stylist: { name: string; role: string } | null;
+};
+
+async function rescheduleBookingRecord(
+  existing: BookingWithClientAndStylist,
   date: string,
   time: string,
 ): Promise<Booking> {
-  const existing = await prisma.booking.findUnique({
-    where: { manageToken: token },
-    include: { client: true, service: true, stylist: { select: { name: true, role: true } } },
-  });
-  if (!existing) throw new BookingError("NOT_FOUND", "Reserva no encontrada");
   if (existing.status === "CANCELLED") {
     throw new BookingError("ALREADY_CANCELLED", "La reserva está cancelada");
   }
+
+  const fechaAnterior = formatDateInZone(salon.timeZone, existing.startsAt);
+  const horaAnterior = formatTimeInZone(salon.timeZone, existing.startsAt);
 
   const [year, month, day] = date.split("-").map(Number);
   const [hour, minute] = time.split(":").map(Number);
@@ -291,7 +299,35 @@ export async function rescheduleBookingByToken(
     data: { googleEventId: eventId },
   });
 
-  await notifyBookingConfirmed({ ...updated, stylist: existing.stylist } as never);
+  await notifyBookingRescheduled(
+    { ...updated, stylist: existing.stylist } as never,
+    { fechaAnterior, horaAnterior },
+  );
   return updated;
 }
 
+export async function rescheduleBookingByToken(
+  token: string,
+  date: string,
+  time: string,
+): Promise<Booking> {
+  const existing = await prisma.booking.findUnique({
+    where: { manageToken: token },
+    include: { client: true, service: true, stylist: { select: { name: true, role: true } } },
+  });
+  if (!existing) throw new BookingError("NOT_FOUND", "Reserva no encontrada");
+  return rescheduleBookingRecord(existing, date, time);
+}
+
+export async function rescheduleBookingById(
+  id: string,
+  date: string,
+  time: string,
+): Promise<Booking> {
+  const existing = await prisma.booking.findUnique({
+    where: { id },
+    include: { client: true, service: true, stylist: { select: { name: true, role: true } } },
+  });
+  if (!existing) throw new BookingError("NOT_FOUND", "Reserva no encontrada");
+  return rescheduleBookingRecord(existing, date, time);
+}

@@ -75,6 +75,11 @@ export const bookingStatusSchema = z.object({
   status: z.enum(["CONFIRMED", "CANCELLED", "COMPLETED", "NO_SHOW"]),
 });
 
+export const bookingRescheduleSchema = z.object({
+  date: z.string().refine(isValidDateKey, "Fecha no válida (usa AAAA-MM-DD)"),
+  time: z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/, "Hora no válida"),
+});
+
 export const vipClientCreateSchema = z.object({
   name: z.string().trim().min(2, "Escribe el nombre").max(80),
   hairColor: z.string().trim().min(2, "Describe el color").max(120),
