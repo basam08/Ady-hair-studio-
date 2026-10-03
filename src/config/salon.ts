@@ -103,7 +103,6 @@ export const salon = {
    */
   stylists: [
     { slug: "ady", name: "Ady", role: "Propietario del salón" },
-    { slug: "carlos", name: "Carlos", role: "Peluquero" },
     { slug: "mila", name: "Mila", role: "Peluquero" },
   ] satisfies StylistDef[],
 
@@ -614,9 +613,7 @@ const ADY_MUJER_SLUGS = ["tinte-raiz", "color-completo", "color-sin-amoniaco"];
  * Qué peluquero hace qué. Reglas del salón:
  *  - Ady: todo "Hombre" + el tinte sencillo de mujer (no mechas/balayage/
  *    técnicas). No hace cortes ni peinados de mujer.
- *  - Carlos: todo "Mujer" (corte, color, cuidado, mechas, extras) + Corte
- *    hombre.
- *  - Mila: todo "Mujer", igual que Carlos, pero nada de "Hombre".
+ *  - Mila: todo "Mujer" (corte, color, cuidado, mechas, extras).
  *  - "Niños" lo hacen los tres.
  */
 export function canStylistPerform(
@@ -626,9 +623,6 @@ export function canStylistPerform(
   if (service.category === "Niños") return true;
   if (stylistSlug === "ady") {
     return service.category === "Hombre" || ADY_MUJER_SLUGS.includes(service.slug);
-  }
-  if (stylistSlug === "carlos") {
-    return service.category.startsWith("Mujer") || service.slug === "corte-hombre";
   }
   if (stylistSlug === "mila") {
     return service.category.startsWith("Mujer");

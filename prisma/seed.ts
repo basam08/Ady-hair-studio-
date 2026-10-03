@@ -67,14 +67,19 @@ async function main() {
       update: { name: st.name, role: st.role, sortOrder: i },
     });
   }
-  console.log(`✔ ${salon.stylists.length} peluqueros`);
+  const stylistSlugs = salon.stylists.map((s) => s.slug);
+  const retiredStylists = await prisma.stylist.updateMany({
+    where: { slug: { notIn: stylistSlugs }, active: true },
+    data: { active: false },
+  });
+  console.log(`✔ ${salon.stylists.length} peluqueros (${retiredStylists.count} retirados)`);
 
-  // ── Reservas de ejemplo (solo si no hay ninguna) ──────────────
+  // ── Reservas de ejemplo (solo con SEED_DEMO=1, nunca en producción) ──
   const count = await prisma.booking.count();
-  if (count === 0) {
+  if (process.env.SEED_DEMO === "1" && count === 0) {
     const services = await prisma.service.findMany();
     const bySlug = new Map(services.map((s) => [s.slug, s]));
-    const stylists = await prisma.stylist.findMany();
+    const stylists = await prisma.stylist.findMany({ where: { active: true } });
     const demoClients = [
       { name: "María López", phone: "+34611223344", email: "maria@example.com" },
       { name: "Carlos Ruiz", phone: "+34622334455", email: null },

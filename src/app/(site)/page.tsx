@@ -17,7 +17,7 @@ const FAQS = [
   },
   {
     q: "¿Puedo elegir peluquero al reservar?",
-    a: "Sí. Al reservar eliges entre Ady, Carlos o Mila, y solo se te muestran los huecos libres de esa persona.",
+    a: "Sí. Al reservar eliges entre Ady o Mila, y solo se te muestran los huecos libres de esa persona.",
   },
   {
     q: "¿Puedo cancelar o cambiar mi cita?",
