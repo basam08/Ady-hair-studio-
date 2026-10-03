@@ -28,7 +28,11 @@ export const GET = withAdmin(async (req: NextRequest) => {
   const bookings = await prisma.booking.findMany({
     where,
     orderBy: { startsAt: "asc" },
-    include: { client: true, stylist: { select: { name: true } } },
+    include: {
+      client: true,
+      service: { select: { slug: true } },
+      stylist: { select: { name: true, slug: true } },
+    },
     take: 500,
   });
 

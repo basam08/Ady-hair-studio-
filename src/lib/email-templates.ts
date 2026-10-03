@@ -105,14 +105,18 @@ export function bookingConfirmedHtml(b: BookingEmailData): string {
   return layout(`Cita confirmada: ${b.serviceName} el ${b.fecha} a las ${b.hora}`, body);
 }
 
-export function bookingRescheduledHtml(
-  b: BookingEmailData & { fechaAnterior: string; horaAnterior: string },
+export function bookingUpdatedHtml(
+  b: BookingEmailData & { fechaAnterior?: string; horaAnterior?: string },
 ): string {
+  const intro =
+    b.fechaAnterior && b.horaAnterior
+      ? `Tu cita en ${salon.name} ha cambiado. Antes era el <strong>${b.fechaAnterior} a las ${b.horaAnterior}</strong>, ahora queda así:`
+      : `Tu cita en ${salon.name} ha cambiado. Estos son los datos actualizados:`;
   const body = `
-    ${eyebrow("Cita cambiada de hora")}
+    ${eyebrow("Cita modificada")}
     ${heading(`Hola ${b.clientName}`)}
     <p style="margin:0 0 24px;font-family:${FONT_SANS};font-size:15px;line-height:1.6;color:#ffffff;">
-      Tu cita en ${salon.name} ha cambiado. Antes era el <strong>${b.fechaAnterior} a las ${b.horaAnterior}</strong>, ahora queda así:
+      ${intro}
     </p>
     <table role="presentation" cellpadding="0" cellspacing="0" style="width:100%;margin-bottom:28px;">
       ${detailRow("Servicio", b.serviceName)}
@@ -123,7 +127,7 @@ export function bookingRescheduledHtml(
     ${button(b.manageUrl, "Gestionar mi cita")}
     <p style="margin:28px 0 0;font-family:${FONT_SANS};font-size:13px;line-height:1.6;color:${MUTED};">¿No te viene bien la nueva hora? Cancela o cámbiala desde el enlace de arriba.</p>
   `;
-  return layout(`Tu cita ha cambiado al ${b.fecha} a las ${b.hora}`, body);
+  return layout(`Tu cita ha cambiado: ${b.fecha} a las ${b.hora}`, body);
 }
 
 export function bookingCancelledHtml(b: BookingEmailData): string {

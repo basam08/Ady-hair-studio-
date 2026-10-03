@@ -13,7 +13,19 @@ interface Booking {
   status: string;
   clientNote: string | null;
   client: { name: string; phone: string; email: string | null };
-  stylist: { name: string } | null;
+  service: { slug: string };
+  stylist: { name: string; slug: string } | null;
+}
+
+interface BookingFormValues {
+  serviceSlug: string;
+  stylistSlug: string;
+  date: string;
+  time: string;
+  name: string;
+  phone: string;
+  email: string;
+  note: string;
 }
 
 type RangePreset = "today" | "week" | "month";
@@ -57,10 +69,7 @@ export function ReservasClient({
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [loading, setLoading] = useState(true);
   const [showNew, setShowNew] = useState(false);
-  const [reschedulingId, setReschedulingId] = useState<string | null>(null);
-  const [rescheduleForm, setRescheduleForm] = useState({ date: "", time: "" });
-  const [rescheduleError, setRescheduleError] = useState<string | null>(null);
-  const [rescheduleBusy, setRescheduleBusy] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
 
   const load = useCallback(() => {
     setLoading(true);
@@ -82,37 +91,6 @@ export function ReservasClient({
       body: JSON.stringify({ status: next }),
     });
     if (res.ok) load();
-  }
-
-  function startReschedule(b: Booking) {
-    const d = new Date(b.startsAt);
-    setReschedulingId(b.id);
-    setRescheduleError(null);
-    setRescheduleForm({
-      date: dateKey(d),
-      time: formatTimeInZone(salon.timeZone, d),
-    });
-  }
-
-  async function submitReschedule(id: string) {
-    setRescheduleError(null);
-    setRescheduleBusy(true);
-    try {
-      const res = await fetch(`/api/admin/bookings/${id}`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(rescheduleForm),
-      });
-      const data = await res.json();
-      if (!res.ok) {
-        setRescheduleError(data?.error?.message ?? "No se pudo cambiar la cita.");
-        return;
-      }
-      setReschedulingId(null);
-      load();
-    } finally {
-      setRescheduleBusy(false);
-    }
   }
 
   const { from, to } = rangeFor(preset);
@@ -139,14 +117,30 @@ export function ReservasClient({
       </div>
 
       {showNew && (
-        <NewBookingForm
-          services={services}
-          stylists={stylists}
-          onCreated={() => {
-            setShowNew(false);
-            load();
-          }}
-        />
+        <div className="mt-6">
+          <BookingForm
+            services={services}
+            stylists={stylists}
+            initial={{
+              serviceSlug: services[0]?.slug ?? "",
+              stylistSlug: stylists[0]?.slug ?? "",
+              date: "",
+              time: "",
+              name: "",
+              phone: "",
+              email: "",
+              note: "",
+            }}
+            endpoint="/api/admin/bookings"
+            method="POST"
+            submitLabel="Crear cita"
+            hint="El admin puede saltarse la antelación mínima."
+            onDone={() => {
+              setShowNew(false);
+              load();
+            }}
+          />
+        </div>
       )}
 
       <div className="mt-6 flex flex-wrap gap-2">
@@ -204,146 +198,117 @@ export function ReservasClient({
                 const d = new Date(b.startsAt);
                 return (
                   <Fragment key={b.id}>
-                  <tr className="align-top">
-                    <td className="border-b border-line py-3 pr-3">
-                      <span className="u-mono">
-                        {d.toLocaleDateString("es-ES", {
-                          day: "2-digit",
-                          month: "2-digit",
-                        })}{" "}
-                        {formatTimeInZone(salon.timeZone, d)}
-                      </span>
-                      <br />
-                      <span className="u-mono text-xs text-cocoa">
-                        {b.stylist?.name ?? "Sin asignar"} · {b.durationMin} min
-                      </span>
-                    </td>
-                    <td className="border-b border-line py-3 pr-3">
-                      {b.serviceName}
-                      <br />
-                      <span className="u-mono text-xs text-cocoa">
-                        {formatPriceCents(b.priceCents)}
-                      </span>
-                      {b.clientNote && (
-                        <p className="mt-1 max-w-[16rem] text-xs italic text-cocoa">
-                          “{b.clientNote}”
-                        </p>
-                      )}
-                    </td>
-                    <td className="border-b border-line py-3 pr-3">
-                      {b.client.name}
-                      <br />
-                      <span className="u-mono text-xs text-cocoa">
-                        {b.client.phone}
-                      </span>
-                    </td>
-                    <td className="border-b border-line py-3 pr-3">
-                      <span
-                        className={`u-mono text-xs uppercase ${
-                          b.status === "CANCELLED" || b.status === "NO_SHOW"
-                            ? "text-persimmon"
-                            : b.status === "COMPLETED"
-                              ? "text-sage"
-                              : "text-ink"
-                        }`}
-                      >
-                        {STATUS_LABEL[b.status]}
-                      </span>
-                    </td>
-                    <td className="border-b border-line py-3 text-right">
-                      {b.status === "CONFIRMED" && (
-                        <div className="flex flex-col items-end gap-1">
-                          <button
-                            type="button"
-                            onClick={() => startReschedule(b)}
-                            className="u-mono text-xs uppercase link-underline"
-                          >
-                            Cambiar fecha/hora
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => setBookingStatus(b.id, "COMPLETED")}
-                            className="u-mono text-xs uppercase link-underline"
-                          >
-                            Completado
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => setBookingStatus(b.id, "NO_SHOW")}
-                            className="u-mono text-xs uppercase link-underline"
-                          >
-                            No vino
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => setBookingStatus(b.id, "CANCELLED")}
-                            className="u-mono text-xs uppercase link-underline text-persimmon"
-                          >
-                            Cancelar
-                          </button>
-                        </div>
-                      )}
-                      {b.status !== "CONFIRMED" && (
-                        <button
-                          type="button"
-                          onClick={() => setBookingStatus(b.id, "CONFIRMED")}
-                          className="u-mono text-xs uppercase link-underline"
+                    <tr className="align-top">
+                      <td className="border-b border-line py-3 pr-3">
+                        <span className="u-mono">
+                          {d.toLocaleDateString("es-ES", {
+                            day: "2-digit",
+                            month: "2-digit",
+                          })}{" "}
+                          {formatTimeInZone(salon.timeZone, d)}
+                        </span>
+                        <br />
+                        <span className="u-mono text-xs text-cocoa">
+                          {b.stylist?.name ?? "Sin asignar"} · {b.durationMin} min
+                        </span>
+                      </td>
+                      <td className="border-b border-line py-3 pr-3">
+                        {b.serviceName}
+                        <br />
+                        <span className="u-mono text-xs text-cocoa">
+                          {formatPriceCents(b.priceCents)}
+                        </span>
+                        {b.clientNote && (
+                          <p className="mt-1 max-w-[16rem] text-xs italic text-cocoa">
+                            “{b.clientNote}”
+                          </p>
+                        )}
+                      </td>
+                      <td className="border-b border-line py-3 pr-3">
+                        {b.client.name}
+                        <br />
+                        <span className="u-mono text-xs text-cocoa">
+                          {b.client.phone}
+                        </span>
+                      </td>
+                      <td className="border-b border-line py-3 pr-3">
+                        <span
+                          className={`u-mono text-xs uppercase ${
+                            b.status === "CANCELLED" || b.status === "NO_SHOW"
+                              ? "text-persimmon"
+                              : b.status === "COMPLETED"
+                                ? "text-sage"
+                                : "text-ink"
+                          }`}
                         >
-                          Reactivar
-                        </button>
-                      )}
-                    </td>
-                  </tr>
-                  {reschedulingId === b.id && (
-                    <tr>
-                      <td colSpan={5} className="border-b border-line bg-cream py-3">
-                        <div className="flex flex-wrap items-end gap-3">
-                          {rescheduleError && (
-                            <p className="w-full border border-persimmon bg-persimmon/10 px-3 py-2 text-sm text-persimmon-dark">
-                              {rescheduleError}
-                            </p>
-                          )}
-                          <label className="block">
-                            <span className="field-label">Nueva fecha</span>
-                            <input
-                              type="date"
-                              className="field"
-                              value={rescheduleForm.date}
-                              onChange={(e) =>
-                                setRescheduleForm({ ...rescheduleForm, date: e.target.value })
+                          {STATUS_LABEL[b.status]}
+                        </span>
+                      </td>
+                      <td className="border-b border-line py-3 text-right">
+                        {b.status === "CONFIRMED" && (
+                          <div className="flex flex-col items-end gap-1">
+                            <button
+                              type="button"
+                              onClick={() =>
+                                setEditingId(editingId === b.id ? null : b.id)
                               }
-                            />
-                          </label>
-                          <label className="block">
-                            <span className="field-label">Nueva hora</span>
-                            <input
-                              type="time"
-                              className="field"
-                              value={rescheduleForm.time}
-                              onChange={(e) =>
-                                setRescheduleForm({ ...rescheduleForm, time: e.target.value })
-                              }
-                            />
-                          </label>
+                              className="u-mono text-xs uppercase link-underline"
+                            >
+                              {editingId === b.id ? "Cerrar edición" : "Editar"}
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => setBookingStatus(b.id, "COMPLETED")}
+                              className="u-mono text-xs uppercase link-underline"
+                            >
+                              Completado
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => setBookingStatus(b.id, "NO_SHOW")}
+                              className="u-mono text-xs uppercase link-underline"
+                            >
+                              No vino
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => setBookingStatus(b.id, "CANCELLED")}
+                              className="u-mono text-xs uppercase link-underline text-persimmon"
+                            >
+                              Cancelar
+                            </button>
+                          </div>
+                        )}
+                        {b.status !== "CONFIRMED" && (
                           <button
                             type="button"
-                            className="btn btn-primary"
-                            disabled={rescheduleBusy}
-                            onClick={() => submitReschedule(b.id)}
-                          >
-                            {rescheduleBusy ? "Guardando…" : "Guardar y avisar al cliente"}
-                          </button>
-                          <button
-                            type="button"
+                            onClick={() => setBookingStatus(b.id, "CONFIRMED")}
                             className="u-mono text-xs uppercase link-underline"
-                            onClick={() => setReschedulingId(null)}
                           >
-                            Cancelar
+                            Reactivar
                           </button>
-                        </div>
+                        )}
                       </td>
                     </tr>
-                  )}
+                    {editingId === b.id && (
+                      <tr>
+                        <td colSpan={5} className="border-b border-line py-4">
+                          <BookingForm
+                            services={services}
+                            stylists={stylists}
+                            initial={valuesFromBooking(b, stylists)}
+                            endpoint={`/api/admin/bookings/${b.id}`}
+                            method="PUT"
+                            submitLabel="Guardar y avisar al cliente"
+                            onCancel={() => setEditingId(null)}
+                            onDone={() => {
+                              setEditingId(null);
+                              load();
+                            }}
+                          />
+                        </td>
+                      </tr>
+                    )}
                   </Fragment>
                 );
               })
@@ -355,25 +320,45 @@ export function ReservasClient({
   );
 }
 
-function NewBookingForm({
+function valuesFromBooking(
+  b: Booking,
+  stylists: { slug: string }[],
+): BookingFormValues {
+  const d = new Date(b.startsAt);
+  return {
+    serviceSlug: b.service.slug,
+    stylistSlug: b.stylist?.slug ?? stylists[0]?.slug ?? "",
+    date: dateKey(d),
+    time: formatTimeInZone(salon.timeZone, d),
+    name: b.client.name,
+    phone: b.client.phone,
+    email: b.client.email ?? "",
+    note: b.clientNote ?? "",
+  };
+}
+
+function BookingForm({
   services,
   stylists,
-  onCreated,
+  initial,
+  endpoint,
+  method,
+  submitLabel,
+  hint,
+  onDone,
+  onCancel,
 }: {
   services: { slug: string; name: string }[];
   stylists: { slug: string; name: string }[];
-  onCreated: () => void;
+  initial: BookingFormValues;
+  endpoint: string;
+  method: "POST" | "PUT";
+  submitLabel: string;
+  hint?: string;
+  onDone: () => void;
+  onCancel?: () => void;
 }) {
-  const [form, setForm] = useState({
-    serviceSlug: services[0]?.slug ?? "",
-    stylistSlug: stylists[0]?.slug ?? "",
-    date: "",
-    time: "",
-    name: "",
-    phone: "",
-    email: "",
-    note: "",
-  });
+  const [form, setForm] = useState<BookingFormValues>(initial);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
@@ -382,8 +367,8 @@ function NewBookingForm({
     setBusy(true);
     setError(null);
     try {
-      const res = await fetch("/api/admin/bookings", {
-        method: "POST",
+      const res = await fetch(endpoint, {
+        method,
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           ...form,
@@ -393,10 +378,10 @@ function NewBookingForm({
       });
       const data = await res.json();
       if (!res.ok) {
-        setError(data?.error?.message ?? "No se pudo crear.");
+        setError(data?.error?.message ?? "No se pudo guardar.");
         return;
       }
-      onCreated();
+      onDone();
     } finally {
       setBusy(false);
     }
@@ -405,7 +390,7 @@ function NewBookingForm({
   return (
     <form
       onSubmit={submit}
-      className="mt-6 grid gap-3 border border-ink bg-cream p-5 sm:grid-cols-3"
+      className="grid gap-3 border border-ink bg-cream p-5 sm:grid-cols-3"
     >
       {error && (
         <p className="sm:col-span-3 border border-persimmon bg-persimmon/10 px-3 py-2 text-sm text-persimmon-dark">
@@ -495,13 +480,20 @@ function NewBookingForm({
           onChange={(e) => setForm({ ...form, note: e.target.value })}
         />
       </label>
-      <div className="sm:col-span-3">
+      <div className="flex flex-wrap items-center gap-3 sm:col-span-3">
         <button type="submit" className="btn btn-primary" disabled={busy}>
-          {busy ? "Creando…" : "Crear cita"}
+          {busy ? "Guardando…" : submitLabel}
         </button>
-        <span className="u-mono ml-3 text-xs text-cocoa">
-          El admin puede saltarse la antelación mínima.
-        </span>
+        {onCancel && (
+          <button
+            type="button"
+            onClick={onCancel}
+            className="u-mono text-xs uppercase link-underline"
+          >
+            Cancelar
+          </button>
+        )}
+        {hint && <span className="u-mono text-xs text-cocoa">{hint}</span>}
       </div>
     </form>
   );

@@ -5,7 +5,7 @@ import { sendEmail } from "@/lib/integrations/email";
 import { sendWhatsApp } from "@/lib/integrations/whatsapp";
 import {
   bookingConfirmedHtml,
-  bookingRescheduledHtml,
+  bookingUpdatedHtml,
   bookingCancelledHtml,
   bookingReminderHtml,
 } from "@/lib/email-templates";
@@ -72,9 +72,9 @@ export async function notifyBookingConfirmed(b: BookingLike): Promise<void> {
   ]);
 }
 
-export async function notifyBookingRescheduled(
+export async function notifyBookingUpdated(
   b: BookingLike,
-  prev: { fechaAnterior: string; horaAnterior: string },
+  prev?: { fechaAnterior: string; horaAnterior: string },
 ): Promise<void> {
   const fecha = formatDateInZone(salon.timeZone, b.startsAt);
   const hora = formatTimeInZone(salon.timeZone, b.startsAt);
@@ -83,8 +83,8 @@ export async function notifyBookingRescheduled(
   const text = [
     `Hola ${b.client.name},`,
     ``,
-    `Tu cita en ${salon.name} ha cambiado de hora.`,
-    `· Antes: ${prev.fechaAnterior} a las ${prev.horaAnterior}`,
+    `Tu cita en ${salon.name} ha cambiado.`,
+    ...(prev ? [`· Antes: ${prev.fechaAnterior} a las ${prev.horaAnterior}`] : []),
     `· Ahora: ${fecha} a las ${hora}`,
     `· Servicio: ${b.serviceName}`,
     ...(b.stylist ? [`· Con: ${b.stylist.name}`] : []),
@@ -96,9 +96,9 @@ export async function notifyBookingRescheduled(
     b.client.email
       ? sendEmail({
           to: b.client.email,
-          subject: `Tu cita ha cambiado de hora · ${salon.name}`,
+          subject: `Tu cita ha cambiado · ${salon.name}`,
           text,
-          html: bookingRescheduledHtml({
+          html: bookingUpdatedHtml({
             clientName: b.client.name,
             serviceName: b.serviceName,
             stylistName: b.stylist?.name,
@@ -106,14 +106,14 @@ export async function notifyBookingRescheduled(
             fecha,
             hora,
             manageUrl: link,
-            fechaAnterior: prev.fechaAnterior,
-            horaAnterior: prev.horaAnterior,
+            fechaAnterior: prev?.fechaAnterior,
+            horaAnterior: prev?.horaAnterior,
           }),
         })
       : Promise.resolve(),
     sendWhatsApp(
       b.client.phone,
-      `✂️ ${salon.name}: tu cita ha cambiado, ahora es el ${fecha} a las ${hora} (antes ${prev.fechaAnterior} ${prev.horaAnterior}). Gestiona tu cita: ${link}`,
+      `✂️ ${salon.name}: tu cita ha cambiado, ahora es el ${fecha} a las ${hora}${prev ? ` (antes ${prev.fechaAnterior} ${prev.horaAnterior})` : ""}. Gestiona tu cita: ${link}`,
     ),
   ]);
 }

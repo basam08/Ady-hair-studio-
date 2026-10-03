@@ -1,10 +1,10 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { prisma } from "@/lib/db";
 import { withAdmin, jsonError } from "@/lib/api";
-import { bookingStatusSchema, bookingRescheduleSchema } from "@/lib/validation";
+import { bookingStatusSchema, adminBookingCreateSchema } from "@/lib/validation";
 import { deleteCalendarEvent } from "@/lib/integrations/google-calendar";
 import { notifyBookingCancelled } from "@/lib/notifications";
-import { rescheduleBookingById, BookingError } from "@/lib/bookings";
+import { updateBookingByAdmin, BookingError } from "@/lib/bookings";
 
 export const dynamic = "force-dynamic";
 
@@ -44,7 +44,7 @@ export const PATCH = withAdmin(
   },
 );
 
-export const POST = withAdmin(
+export const PUT = withAdmin(
   async (
     req: NextRequest,
     { params }: { params: Promise<{ id: string }> },
@@ -56,25 +56,31 @@ export const POST = withAdmin(
     } catch {
       return jsonError("BAD_JSON", "Cuerpo no válido", 400);
     }
-    const parsed = bookingRescheduleSchema.safeParse(body);
+    const parsed = adminBookingCreateSchema.safeParse(body);
     if (!parsed.success) {
       return NextResponse.json(
-        { error: { code: "VALIDATION_ERROR", message: "Fecha u hora no válidas", details: parsed.error.flatten() } },
+        { error: { code: "VALIDATION_ERROR", message: "Revisa los campos", details: parsed.error.flatten() } },
         { status: 422 },
       );
     }
 
     try {
-      const updated = await rescheduleBookingById(id, parsed.data.date, parsed.data.time);
-      return NextResponse.json({
-        ok: true,
-        startsAt: updated.startsAt.toISOString(),
-        endsAt: updated.endsAt.toISOString(),
+      const updated = await updateBookingByAdmin(id, {
+        ...parsed.data,
+        email: parsed.data.email || undefined,
+        note: parsed.data.note || undefined,
       });
+      return NextResponse.json({ ok: true, startsAt: updated.startsAt.toISOString() });
     } catch (err) {
       if (err instanceof BookingError) {
         const status =
-          err.code === "SLOT_TAKEN" ? 409 : err.code === "NOT_FOUND" ? 404 : 422;
+          err.code === "SLOT_TAKEN"
+            ? 409
+            : err.code === "NOT_FOUND" ||
+                err.code === "SERVICE_NOT_FOUND" ||
+                err.code === "STYLIST_NOT_FOUND"
+              ? 404
+              : 422;
         return jsonError(err.code, err.message, status);
       }
       throw err;

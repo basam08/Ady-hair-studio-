@@ -13,7 +13,7 @@ import { normalizePhone } from "@/lib/validation";
 import {
   notifyBookingCancelled,
   notifyBookingConfirmed,
-  notifyBookingRescheduled,
+  notifyBookingUpdated,
 } from "@/lib/notifications";
 import {
   createCalendarEvent,
@@ -227,22 +227,31 @@ export async function cancelBookingByToken(token: string): Promise<void> {
   await notifyBookingCancelled(booking);
 }
 
-type BookingWithClientAndStylist = Booking & {
+interface BookingDraft {
+  serviceId: string;
+  serviceName: string;
+  priceCents: number;
+  durationMin: number;
+  stylistId: string | null;
+  clientNote: string | null;
+  contact: { name: string; phone: string; email: string | null } | null;
+}
+
+type BookingForSave = Booking & {
   client: { name: string; email: string | null; phone: string };
   stylist: { name: string; role: string } | null;
 };
 
-async function rescheduleBookingRecord(
-  existing: BookingWithClientAndStylist,
+async function saveBookingChanges(
+  existing: BookingForSave,
+  draft: BookingDraft,
   date: string,
   time: string,
+  opts: { enforceLead: boolean },
 ): Promise<Booking> {
   if (existing.status === "CANCELLED") {
     throw new BookingError("ALREADY_CANCELLED", "La reserva está cancelada");
   }
-
-  const fechaAnterior = formatDateInZone(salon.timeZone, existing.startsAt);
-  const horaAnterior = formatTimeInZone(salon.timeZone, existing.startsAt);
 
   const [year, month, day] = date.split("-").map(Number);
   const [hour, minute] = time.split(":").map(Number);
@@ -254,20 +263,21 @@ async function rescheduleBookingRecord(
     hour,
     minute,
   );
-  const endsAt = new Date(startsAt.getTime() + existing.durationMin * 60_000);
+  const endsAt = new Date(startsAt.getTime() + draft.durationMin * 60_000);
 
-  const minLead = Date.now() + salon.minLeadHours * 3_600_000;
-  if (startsAt.getTime() < minLead) {
-    throw new BookingError("TOO_SOON", "Elige un hueco con más antelación");
+  if (opts.enforceLead) {
+    const minLead = Date.now() + salon.minLeadHours * 3_600_000;
+    if (startsAt.getTime() < minLead) {
+      throw new BookingError("TOO_SOON", "Elige un hueco con más antelación");
+    }
   }
 
   const updated = await prisma.$transaction(async (tx) => {
-    // Se mantiene el mismo peluquero; se comprueba el hueco excluyendo la
-    // reserva actual a sí misma.
-    const free = existing.stylistId
+    // Se comprueba el hueco excluyendo la reserva actual a sí misma.
+    const free = draft.stylistId
       ? await isStylistSlotFree(
           tx as never,
-          existing.stylistId,
+          draft.stylistId,
           startsAt,
           endsAt,
           existing.id,
@@ -276,34 +286,73 @@ async function rescheduleBookingRecord(
     if (!free) {
       throw new BookingError("SLOT_TAKEN", "Ese hueco ya no está disponible");
     }
+
+    let clientId = existing.clientId;
+    if (draft.contact) {
+      const client = await tx.client.upsert({
+        where: { phone: draft.contact.phone },
+        create: {
+          name: draft.contact.name,
+          phone: draft.contact.phone,
+          email: draft.contact.email,
+        },
+        update: {
+          name: draft.contact.name,
+          ...(draft.contact.email ? { email: draft.contact.email } : {}),
+        },
+      });
+      clientId = client.id;
+    }
+
     return tx.booking.update({
       where: { id: existing.id },
-      data: { startsAt, endsAt },
-      include: { client: true },
+      data: {
+        clientId,
+        serviceId: draft.serviceId,
+        serviceName: draft.serviceName,
+        priceCents: draft.priceCents,
+        durationMin: draft.durationMin,
+        stylistId: draft.stylistId,
+        clientNote: draft.clientNote,
+        startsAt,
+        endsAt,
+      },
+      include: { client: true, stylist: { select: { name: true, role: true } } },
     });
   });
 
   if (existing.googleEventId) await deleteCalendarEvent(existing.googleEventId);
-  const stylistLabel = existing.stylist
-    ? `${existing.stylist.role}: ${existing.stylist.name}`
+  const stylistLabel = updated.stylist
+    ? `${updated.stylist.role}: ${updated.stylist.name}`
     : "Sin asignar";
   const eventId = await createCalendarEvent({
-    summary: `${existing.serviceName} · ${existing.client.name} · ${stylistLabel}`,
-    description: `${stylistLabel}\nTel: ${existing.client.phone}`,
+    summary: `${updated.serviceName} · ${updated.client.name} · ${stylistLabel}`,
+    description: `${stylistLabel}\nTel: ${updated.client.phone}`,
     startIso: startsAt.toISOString(),
     endIso: endsAt.toISOString(),
     timeZone: salon.timeZone,
   });
-  await prisma.booking.update({
+  const final = await prisma.booking.update({
     where: { id: existing.id },
     data: { googleEventId: eventId },
+    include: { client: true, stylist: { select: { name: true, role: true } } },
   });
 
-  await notifyBookingRescheduled(
-    { ...updated, stylist: existing.stylist } as never,
-    { fechaAnterior, horaAnterior },
-  );
-  return updated;
+  const dateChanged = existing.startsAt.getTime() !== startsAt.getTime();
+  const serviceOrStylistChanged =
+    existing.serviceId !== draft.serviceId || existing.stylistId !== draft.stylistId;
+  if (dateChanged || serviceOrStylistChanged) {
+    await notifyBookingUpdated(
+      final,
+      dateChanged
+        ? {
+            fechaAnterior: formatDateInZone(salon.timeZone, existing.startsAt),
+            horaAnterior: formatTimeInZone(salon.timeZone, existing.startsAt),
+          }
+        : undefined,
+    );
+  }
+  return final;
 }
 
 export async function rescheduleBookingByToken(
@@ -313,21 +362,78 @@ export async function rescheduleBookingByToken(
 ): Promise<Booking> {
   const existing = await prisma.booking.findUnique({
     where: { manageToken: token },
-    include: { client: true, service: true, stylist: { select: { name: true, role: true } } },
+    include: { client: true, stylist: { select: { name: true, role: true } } },
   });
   if (!existing) throw new BookingError("NOT_FOUND", "Reserva no encontrada");
-  return rescheduleBookingRecord(existing, date, time);
+
+  return saveBookingChanges(
+    existing,
+    {
+      serviceId: existing.serviceId,
+      serviceName: existing.serviceName,
+      priceCents: existing.priceCents,
+      durationMin: existing.durationMin,
+      stylistId: existing.stylistId,
+      clientNote: existing.clientNote,
+      contact: null,
+    },
+    date,
+    time,
+    { enforceLead: true },
+  );
 }
 
-export async function rescheduleBookingById(
+export interface AdminBookingEdit {
+  serviceSlug: string;
+  stylistSlug: string;
+  date: string;
+  time: string;
+  name: string;
+  phone: string;
+  email?: string;
+  note?: string;
+}
+
+export async function updateBookingByAdmin(
   id: string,
-  date: string,
-  time: string,
+  input: AdminBookingEdit,
 ): Promise<Booking> {
   const existing = await prisma.booking.findUnique({
     where: { id },
-    include: { client: true, service: true, stylist: { select: { name: true, role: true } } },
+    include: { client: true, stylist: { select: { name: true, role: true } } },
   });
   if (!existing) throw new BookingError("NOT_FOUND", "Reserva no encontrada");
-  return rescheduleBookingRecord(existing, date, time);
+
+  const service = await prisma.service.findUnique({
+    where: { slug: input.serviceSlug },
+  });
+  if (!service || !service.active) {
+    throw new BookingError("SERVICE_NOT_FOUND", "Servicio no disponible");
+  }
+  const stylist = await prisma.stylist.findUnique({
+    where: { slug: input.stylistSlug },
+  });
+  if (!stylist || !stylist.active) {
+    throw new BookingError("STYLIST_NOT_FOUND", "Peluquero no disponible");
+  }
+
+  return saveBookingChanges(
+    existing,
+    {
+      serviceId: service.id,
+      serviceName: service.name,
+      priceCents: service.priceCents,
+      durationMin: service.durationMin,
+      stylistId: stylist.id,
+      clientNote: input.note?.trim() || null,
+      contact: {
+        name: input.name.trim(),
+        phone: normalizePhone(input.phone),
+        email: input.email?.trim() || null,
+      },
+    },
+    input.date,
+    input.time,
+    { enforceLead: false },
+  );
 }
