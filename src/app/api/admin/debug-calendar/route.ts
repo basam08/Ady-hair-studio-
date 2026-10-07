@@ -32,15 +32,23 @@ export const GET = withAdmin(async (req: NextRequest) => {
   }
 
   try {
+    // Misma llamada que usa la reserva real (listar eventos), no la de
+    // ajustes del calendario — esa pide un scope distinto y daba un 403
+    // que no reflejaba el problema real.
+    const params = new URLSearchParams({
+      timeMin: new Date().toISOString(),
+      timeMax: new Date(Date.now() + 86_400_000).toISOString(),
+      maxResults: "1",
+    });
     const res = await fetch(
-      `https://www.googleapis.com/calendar/v3/calendars/${encodeURIComponent(calendarId)}`,
+      `https://www.googleapis.com/calendar/v3/calendars/${encodeURIComponent(calendarId)}/events?${params}`,
       { headers: { Authorization: `Bearer ${token}` } },
     );
     const body = await res.json().catch(() => null);
     report.httpStatus = res.status;
     report.googleResponse = body;
     report.result = res.ok
-      ? "OK: la cuenta de servicio ve el calendario correctamente"
+      ? "OK: la cuenta de servicio puede leer/escribir en ese calendario"
       : res.status === 404
         ? "404: el ID de calendario no existe o la cuenta de servicio no lo tiene compartido"
         : res.status === 403
