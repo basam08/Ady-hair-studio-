@@ -53,9 +53,6 @@ export interface StylistDef {
   slug: string;
   name: string;
   role: string;
-  // Id de color de Google Calendar para diferenciar sus citas a golpe de
-  // vista (ver GOOGLE_EVENT_COLORS más abajo).
-  googleColorId: string;
 }
 
 export interface GalleryItem {
@@ -105,8 +102,8 @@ export const salon = {
    * los demás.
    */
   stylists: [
-    { slug: "ady", name: "Ady", role: "Propietario del salón", googleColorId: "9" },
-    { slug: "mila", name: "Mila", role: "Peluquero", googleColorId: "5" },
+    { slug: "ady", name: "Ady", role: "Propietario del salón" },
+    { slug: "mila", name: "Mila", role: "Peluquero" },
   ] satisfies StylistDef[],
 
   /**
@@ -623,12 +620,6 @@ export function canStylistPerform(
     return service.category.startsWith("Mujer");
   }
   return true;
-}
-
-/** Id de color de Google Calendar del peluquero (detalle visual: cada uno
- * tiene además su propio calendario, así que esto ya no decide bloqueos). */
-export function stylistColorId(slug: string): string | undefined {
-  return salon.stylists.find((s) => s.slug === slug)?.googleColorId;
 }
 
 export function formatPrice(euros: number): string {

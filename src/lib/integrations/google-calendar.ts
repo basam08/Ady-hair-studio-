@@ -43,8 +43,6 @@ export interface CalendarEventInput {
   startIso: string;
   endIso: string;
   timeZone: string;
-  /** Id de color de Google Calendar (ver salon.ts: stylistColorId). */
-  colorId?: string;
 }
 
 export async function createCalendarEvent(
@@ -72,7 +70,6 @@ export async function createCalendarEvent(
           description: input.description,
           start: { dateTime: input.startIso, timeZone: input.timeZone },
           end: { dateTime: input.endIso, timeZone: input.timeZone },
-          ...(input.colorId ? { colorId: input.colorId } : {}),
         }),
       },
     );
@@ -92,7 +89,6 @@ export interface CalendarBusyEvent {
   id: string;
   startIso: string;
   endIso: string;
-  colorId: string | null;
 }
 
 /**
@@ -117,7 +113,7 @@ export async function listBusyEvents(
       singleEvents: "true",
       showDeleted: "false",
       maxResults: "250",
-      fields: "items(id,status,colorId,start,end)",
+      fields: "items(id,status,start,end)",
     });
     const res = await fetch(
       `https://www.googleapis.com/calendar/v3/calendars/${encodedId}/events?${params}`,
@@ -131,7 +127,6 @@ export async function listBusyEvents(
       items?: {
         id: string;
         status?: string;
-        colorId?: string;
         start?: { dateTime?: string; date?: string };
         end?: { dateTime?: string; date?: string };
       }[];
@@ -142,7 +137,6 @@ export async function listBusyEvents(
         id: ev.id,
         startIso: ev.start!.dateTime ?? `${ev.start!.date}T00:00:00`,
         endIso: ev.end!.dateTime ?? `${ev.end!.date}T00:00:00`,
-        colorId: ev.colorId ?? null,
       }));
   } catch (err) {
     console.error("[gcal] listar eventos fallo:", (err as Error).message);

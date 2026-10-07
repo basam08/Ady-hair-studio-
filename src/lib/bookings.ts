@@ -1,7 +1,7 @@
 import "server-only";
 import { randomBytes } from "node:crypto";
 import type { Booking } from "@prisma/client";
-import { salon, canStylistPerform, stylistColorId } from "@/config/salon";
+import { salon, canStylistPerform } from "@/config/salon";
 import { prisma } from "@/lib/db";
 import {
   isStylistSlotFree,
@@ -197,7 +197,6 @@ export async function createBooking(
     startIso: full.startsAt.toISOString(),
     endIso: full.endsAt.toISOString(),
     timeZone: salon.timeZone,
-    colorId: stylistColorId(stylist.slug),
   });
   if (eventId) {
     await prisma.booking.update({
@@ -370,7 +369,6 @@ async function saveBookingChanges(
     startIso: startsAt.toISOString(),
     endIso: endsAt.toISOString(),
     timeZone: salon.timeZone,
-    colorId: draft.stylistSlug ? stylistColorId(draft.stylistSlug) : undefined,
   });
   const final = await prisma.booking.update({
     where: { id: existing.id },
