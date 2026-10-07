@@ -27,10 +27,10 @@ const SCOPE = "https://www.googleapis.com/auth/calendar.events";
  */
 export function calendarIdForStylist(stylistSlug: string | null): string | null {
   if (stylistSlug) {
-    const perStylist = process.env[`GOOGLE_CALENDAR_ID_${stylistSlug.toUpperCase()}`];
+    const perStylist = process.env[`GOOGLE_CALENDAR_ID_${stylistSlug.toUpperCase()}`]?.trim();
     if (perStylist) return perStylist;
   }
-  return process.env.GOOGLE_CALENDAR_ID || null;
+  return process.env.GOOGLE_CALENDAR_ID?.trim() || null;
 }
 
 function isConfigured(calendarId: string | null): boolean {

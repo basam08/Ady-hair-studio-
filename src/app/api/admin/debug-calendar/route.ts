@@ -11,9 +11,15 @@ export const GET = withAdmin(async (req: NextRequest) => {
   const stylistSlug = req.nextUrl.searchParams.get("stylist");
   const calendarId = calendarIdForStylist(stylistSlug);
 
+  const rawEnvValue =
+    process.env[`GOOGLE_CALENDAR_ID_${(stylistSlug ?? "").toUpperCase()}`] ?? null;
+
   const report: Record<string, unknown> = {
     stylistSlug,
     calendarId,
+    calendarIdLength: calendarId?.length ?? null,
+    rawEnvValueJson: JSON.stringify(rawEnvValue),
+    rawEnvValueLength: rawEnvValue?.length ?? null,
     hasServiceAccountEnvVars: hasGoogleServiceAccount(),
     googleServiceAccountEmail: process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL || null,
   };
