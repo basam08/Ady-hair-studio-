@@ -17,6 +17,7 @@ function openMinutesForDate(dateKey: string): number {
 export interface DashboardStats {
   occupancyNext7: number;
   todayCount: number;
+  todayRevenueCents: number;
   weekRevenueCents: number;
   newClientsThisMonth: number;
   todayAgenda: {
@@ -88,6 +89,7 @@ export async function getDashboardStats(): Promise<DashboardStats> {
   return {
     occupancyNext7: openMin > 0 ? Math.round((bookedMin / openMin) * 100) : 0,
     todayCount: todayBookings.length,
+    todayRevenueCents: todayBookings.reduce((s, b) => s + b.priceCents, 0),
     weekRevenueCents: weekBookings.reduce((s, b) => s + b.priceCents, 0),
     newClientsThisMonth: newClients,
     todayAgenda: todayBookings.map((b) => ({

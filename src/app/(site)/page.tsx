@@ -274,9 +274,7 @@ export default function HomePage() {
               className="h-full w-full"
               loading="lazy"
               referrerPolicy="no-referrer-when-downgrade"
-              src={`https://www.google.com/maps?q=${encodeURIComponent(
-                salon.contact.maps.placeQuery,
-              )}&output=embed`}
+              src={`https://www.google.com/maps?q=${salon.contact.maps.lat},${salon.contact.maps.lng}&output=embed`}
             />
           </div>
         </div>

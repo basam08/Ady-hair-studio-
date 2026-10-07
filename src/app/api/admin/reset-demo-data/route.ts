@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { withAdmin } from "@/lib/api";
 import { prisma } from "@/lib/db";
-import { deleteCalendarEvent } from "@/lib/integrations/google-calendar";
+import { deleteCalendarEvent, calendarIdForStylist } from "@/lib/integrations/google-calendar";
 
 export const dynamic = "force-dynamic";
 
@@ -24,10 +24,15 @@ export const POST = withAdmin(async (req: Request) => {
 
   const bookings = await prisma.booking.findMany({
     where: { deletedAt: null, googleEventId: { not: null } },
-    select: { googleEventId: true },
+    select: { googleEventId: true, stylist: { select: { slug: true } } },
   });
   await Promise.all(
-    bookings.map((b) => deleteCalendarEvent(b.googleEventId as string)),
+    bookings.map((b) =>
+      deleteCalendarEvent(
+        calendarIdForStylist(b.stylist?.slug ?? null),
+        b.googleEventId as string,
+      ),
+    ),
   );
 
   const now = new Date();

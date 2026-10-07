@@ -45,13 +45,18 @@ export default async function AdminDashboard() {
         </p>
       </div>
 
-      <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
         <Stat
           label="Ocupación 7 días"
           value={`${stats.occupancyNext7}%`}
           hint={`${stylistCount} peluqueros`}
         />
         <Stat label="Citas hoy" value={String(stats.todayCount)} />
+        <Stat
+          label="Ingresos hoy"
+          value={formatPriceCents(stats.todayRevenueCents)}
+          hint="confirmadas + completadas"
+        />
         <Stat
           label="Ingresos 7 días"
           value={formatPriceCents(stats.weekRevenueCents)}

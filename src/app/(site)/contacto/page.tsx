@@ -72,9 +72,7 @@ export default function ContactoPage() {
               className="h-full w-full"
               loading="lazy"
               referrerPolicy="no-referrer-when-downgrade"
-              src={`https://www.google.com/maps?q=${encodeURIComponent(
-                maps.placeQuery,
-              )}&output=embed`}
+              src={`https://www.google.com/maps?q=${maps.lat},${maps.lng}&output=embed`}
             />
           </div>
           <a

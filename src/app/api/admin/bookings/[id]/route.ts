@@ -2,7 +2,7 @@ import { NextResponse, type NextRequest } from "next/server";
 import { prisma } from "@/lib/db";
 import { withAdmin, jsonError } from "@/lib/api";
 import { bookingStatusSchema, adminBookingCreateSchema } from "@/lib/validation";
-import { deleteCalendarEvent } from "@/lib/integrations/google-calendar";
+import { deleteCalendarEvent, calendarIdForStylist } from "@/lib/integrations/google-calendar";
 import { notifyBookingCancelled } from "@/lib/notifications";
 import { updateBookingByAdmin, BookingError } from "@/lib/bookings";
 
@@ -25,7 +25,7 @@ export const PATCH = withAdmin(
 
     const booking = await prisma.booking.findUnique({
       where: { id },
-      include: { client: true },
+      include: { client: true, stylist: { select: { slug: true } } },
     });
     if (!booking) return jsonError("NOT_FOUND", "Reserva no encontrada", 404);
 
@@ -36,7 +36,12 @@ export const PATCH = withAdmin(
     });
 
     if (parsed.data.status === "CANCELLED" && booking.status !== "CANCELLED") {
-      if (booking.googleEventId) await deleteCalendarEvent(booking.googleEventId);
+      if (booking.googleEventId) {
+        await deleteCalendarEvent(
+          calendarIdForStylist(booking.stylist?.slug ?? null),
+          booking.googleEventId,
+        );
+      }
       await notifyBookingCancelled(updated);
     }
 
@@ -94,9 +99,17 @@ export const DELETE = withAdmin(
     { params }: { params: Promise<{ id: string }> },
   ) => {
     const { id } = await params;
-    const booking = await prisma.booking.findUnique({ where: { id } });
+    const booking = await prisma.booking.findUnique({
+      where: { id },
+      include: { stylist: { select: { slug: true } } },
+    });
     if (!booking) return jsonError("NOT_FOUND", "Reserva no encontrada", 404);
-    if (booking.googleEventId) await deleteCalendarEvent(booking.googleEventId);
+    if (booking.googleEventId) {
+      await deleteCalendarEvent(
+        calendarIdForStylist(booking.stylist?.slug ?? null),
+        booking.googleEventId,
+      );
+    }
     await prisma.booking.delete({ where: { id } });
     return NextResponse.json({ ok: true });
   },

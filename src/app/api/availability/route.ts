@@ -83,7 +83,12 @@ export async function GET(req: NextRequest) {
     durationMin += extras.reduce((sum, e) => sum + e.durationMin, 0);
   }
 
-  const slots = await getAvailableSlots(parsed.data.date, durationMin, stylistId);
+  const slots = await getAvailableSlots(
+    parsed.data.date,
+    durationMin,
+    stylistId,
+    parsed.data.stylist ?? null,
+  );
   return NextResponse.json({
     date: parsed.data.date,
     service: parsed.data.service,

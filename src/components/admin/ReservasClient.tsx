@@ -106,6 +106,12 @@ export function ReservasClient({
           >
             Exportar CSV
           </a>
+          <a
+            href={`/api/admin/export-pdf?from=${from}&to=${to}`}
+            className="u-mono text-xs uppercase tracking-widest link-underline"
+          >
+            Exportar PDF
+          </a>
           <button
             type="button"
             onClick={() => setShowNew((v) => !v)}
@@ -399,17 +405,11 @@ function BookingForm({
       )}
       <label className="block">
         <span className="field-label">Servicio</span>
-        <select
-          className="field"
+        <ServiceCombobox
+          services={services}
           value={form.serviceSlug}
-          onChange={(e) => setForm({ ...form, serviceSlug: e.target.value })}
-        >
-          {services.map((s) => (
-            <option key={s.slug} value={s.slug}>
-              {s.name}
-            </option>
-          ))}
-        </select>
+          onChange={(slug) => setForm({ ...form, serviceSlug: slug })}
+        />
       </label>
       <label className="block">
         <span className="field-label">Peluquero/a</span>
@@ -496,5 +496,65 @@ function BookingForm({
         {hint && <span className="u-mono text-xs text-cocoa">{hint}</span>}
       </div>
     </form>
+  );
+}
+
+function ServiceCombobox({
+  services,
+  value,
+  onChange,
+}: {
+  services: { slug: string; name: string }[];
+  value: string;
+  onChange: (slug: string) => void;
+}) {
+  const [query, setQuery] = useState(
+    () => services.find((s) => s.slug === value)?.name ?? "",
+  );
+  const [open, setOpen] = useState(false);
+
+  useEffect(() => {
+    setQuery(services.find((s) => s.slug === value)?.name ?? "");
+  }, [value, services]);
+
+  const q = query.trim().toLowerCase();
+  const filtered = q
+    ? services.filter((s) => s.name.toLowerCase().includes(q))
+    : services;
+
+  return (
+    <div className="relative">
+      <input
+        className="field"
+        placeholder="Escribe para buscar…"
+        value={query}
+        onChange={(e) => {
+          setQuery(e.target.value);
+          setOpen(true);
+        }}
+        onFocus={() => setOpen(true)}
+        onBlur={() => setTimeout(() => setOpen(false), 150)}
+      />
+      {open && filtered.length > 0 && (
+        <ul className="absolute z-10 mt-1 max-h-56 w-full overflow-y-auto border border-ink bg-oat shadow-lg">
+          {filtered.map((s) => (
+            <li key={s.slug}>
+              <button
+                type="button"
+                onMouseDown={(e) => e.preventDefault()}
+                onClick={() => {
+                  onChange(s.slug);
+                  setQuery(s.name);
+                  setOpen(false);
+                }}
+                className="block w-full px-3 py-2 text-left text-sm hover:bg-cream"
+              >
+                {s.name}
+              </button>
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
   );
 }

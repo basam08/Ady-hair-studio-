@@ -1,9 +1,13 @@
 import "server-only";
 import { randomBytes } from "node:crypto";
 import type { Booking } from "@prisma/client";
-import { salon, canStylistPerform } from "@/config/salon";
+import { salon, canStylistPerform, stylistColorId } from "@/config/salon";
 import { prisma } from "@/lib/db";
-import { isStylistSlotFree, isPooledSlotFree } from "@/lib/availability";
+import {
+  isStylistSlotFree,
+  isPooledSlotFree,
+  isCalendarSlotFree,
+} from "@/lib/availability";
 import {
   zonedWallTimeToUtc,
   formatDateInZone,
@@ -18,6 +22,7 @@ import {
 import {
   createCalendarEvent,
   deleteCalendarEvent,
+  calendarIdForStylist,
 } from "@/lib/integrations/google-calendar";
 import { appendBookingRow } from "@/lib/integrations/google-sheets";
 
@@ -136,6 +141,13 @@ export async function createBooking(
     }
   }
 
+  if (!(await isCalendarSlotFree(stylist.slug, startsAt, endsAt))) {
+    throw new BookingError(
+      "SLOT_TAKEN",
+      "Ese hueco ya no está disponible (ocupado en el calendario)",
+    );
+  }
+
   const phone = normalizePhone(input.phone);
   const email = input.email?.trim() || null;
 
@@ -179,12 +191,13 @@ export async function createBooking(
   };
   const fullWithStylist = { ...full, stylist: { name: stylist.name } };
 
-  const eventId = await createCalendarEvent({
+  const eventId = await createCalendarEvent(calendarIdForStylist(stylist.slug), {
     summary: `${full.serviceName} · ${full.client.name} · ${stylist.role}: ${stylist.name}`,
     description: `${stylist.role}: ${stylist.name}\nTel: ${full.client.phone}\n${full.clientNote ?? ""}`,
     startIso: full.startsAt.toISOString(),
     endIso: full.endsAt.toISOString(),
     timeZone: salon.timeZone,
+    colorId: stylistColorId(stylist.slug),
   });
   if (eventId) {
     await prisma.booking.update({
@@ -212,7 +225,7 @@ export async function createBooking(
 export async function cancelBookingByToken(token: string): Promise<void> {
   const booking = await prisma.booking.findUnique({
     where: { manageToken: token },
-    include: { client: true, stylist: { select: { name: true } } },
+    include: { client: true, stylist: { select: { name: true, slug: true } } },
   });
   if (!booking) throw new BookingError("NOT_FOUND", "Reserva no encontrada");
   if (booking.status === "CANCELLED") {
@@ -223,7 +236,12 @@ export async function cancelBookingByToken(token: string): Promise<void> {
     where: { id: booking.id },
     data: { status: "CANCELLED" },
   });
-  if (booking.googleEventId) await deleteCalendarEvent(booking.googleEventId);
+  if (booking.googleEventId) {
+    await deleteCalendarEvent(
+      calendarIdForStylist(booking.stylist?.slug ?? null),
+      booking.googleEventId,
+    );
+  }
   await notifyBookingCancelled(booking);
 }
 
@@ -233,13 +251,14 @@ interface BookingDraft {
   priceCents: number;
   durationMin: number;
   stylistId: string | null;
+  stylistSlug: string | null;
   clientNote: string | null;
   contact: { name: string; phone: string; email: string | null } | null;
 }
 
 type BookingForSave = Booking & {
   client: { name: string; email: string | null; phone: string };
-  stylist: { name: string; role: string } | null;
+  stylist: { name: string; role: string; slug: string } | null;
 };
 
 async function saveBookingChanges(
@@ -269,6 +288,21 @@ async function saveBookingChanges(
     const minLead = Date.now() + salon.minLeadHours * 3_600_000;
     if (startsAt.getTime() < minLead) {
       throw new BookingError("TOO_SOON", "Elige un hueco con más antelación");
+    }
+  }
+
+  if (draft.stylistSlug) {
+    const calendarFree = await isCalendarSlotFree(
+      draft.stylistSlug,
+      startsAt,
+      endsAt,
+      existing.googleEventId,
+    );
+    if (!calendarFree) {
+      throw new BookingError(
+        "SLOT_TAKEN",
+        "Ese hueco ya no está disponible (ocupado en el calendario)",
+      );
     }
   }
 
@@ -321,16 +355,22 @@ async function saveBookingChanges(
     });
   });
 
-  if (existing.googleEventId) await deleteCalendarEvent(existing.googleEventId);
+  if (existing.googleEventId) {
+    await deleteCalendarEvent(
+      calendarIdForStylist(existing.stylist?.slug ?? null),
+      existing.googleEventId,
+    );
+  }
   const stylistLabel = updated.stylist
     ? `${updated.stylist.role}: ${updated.stylist.name}`
     : "Sin asignar";
-  const eventId = await createCalendarEvent({
+  const eventId = await createCalendarEvent(calendarIdForStylist(draft.stylistSlug), {
     summary: `${updated.serviceName} · ${updated.client.name} · ${stylistLabel}`,
     description: `${stylistLabel}\nTel: ${updated.client.phone}`,
     startIso: startsAt.toISOString(),
     endIso: endsAt.toISOString(),
     timeZone: salon.timeZone,
+    colorId: draft.stylistSlug ? stylistColorId(draft.stylistSlug) : undefined,
   });
   const final = await prisma.booking.update({
     where: { id: existing.id },
@@ -362,7 +402,7 @@ export async function rescheduleBookingByToken(
 ): Promise<Booking> {
   const existing = await prisma.booking.findUnique({
     where: { manageToken: token },
-    include: { client: true, stylist: { select: { name: true, role: true } } },
+    include: { client: true, stylist: { select: { name: true, role: true, slug: true } } },
   });
   if (!existing) throw new BookingError("NOT_FOUND", "Reserva no encontrada");
 
@@ -374,6 +414,7 @@ export async function rescheduleBookingByToken(
       priceCents: existing.priceCents,
       durationMin: existing.durationMin,
       stylistId: existing.stylistId,
+      stylistSlug: existing.stylist?.slug ?? null,
       clientNote: existing.clientNote,
       contact: null,
     },
@@ -400,7 +441,7 @@ export async function updateBookingByAdmin(
 ): Promise<Booking> {
   const existing = await prisma.booking.findUnique({
     where: { id },
-    include: { client: true, stylist: { select: { name: true, role: true } } },
+    include: { client: true, stylist: { select: { name: true, role: true, slug: true } } },
   });
   if (!existing) throw new BookingError("NOT_FOUND", "Reserva no encontrada");
 
@@ -425,6 +466,7 @@ export async function updateBookingByAdmin(
       priceCents: service.priceCents,
       durationMin: service.durationMin,
       stylistId: stylist.id,
+      stylistSlug: stylist.slug,
       clientNote: input.note?.trim() || null,
       contact: {
         name: input.name.trim(),

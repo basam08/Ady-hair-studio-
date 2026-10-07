@@ -6,6 +6,10 @@ import {
   toLocalParts,
   zonedWallTimeToUtc,
 } from "@/lib/time";
+import {
+  listBusyEvents,
+  calendarIdForStylist,
+} from "@/lib/integrations/google-calendar";
 
 export interface Slot {
   /** Hora local "HH:MM" */
@@ -44,6 +48,7 @@ export async function getAvailableSlots(
   dateKey: string,
   durationMin: number,
   stylistId: string | null,
+  stylistSlug: string | null = null,
   now: Date = new Date(),
 ): Promise<Slot[]> {
   const [year, month, day] = dateKey.split("-").map(Number);
@@ -96,6 +101,23 @@ export async function getAvailableSlots(
     start: b.startsAt.getTime(),
     end: b.endsAt.getTime(),
   }));
+
+  // Reservas apuntadas a mano directamente en el calendario del peluquero
+  // (llamadas telefónicas, etc.) también ocupan el hueco.
+  const calendarId = stylistSlug ? calendarIdForStylist(stylistSlug) : null;
+  if (calendarId) {
+    const calendarEvents = await listBusyEvents(
+      calendarId,
+      windowStart.toISOString(),
+      windowEnd.toISOString(),
+    );
+    for (const ev of calendarEvents) {
+      bookingIntervals.push({
+        start: new Date(ev.startIso).getTime(),
+        end: new Date(ev.endIso).getTime(),
+      });
+    }
+  }
 
   const turnaround = salon.turnaroundMin * 60_000;
   // Cada servicio usa su propia duración como intervalo entre huecos (un
@@ -187,6 +209,39 @@ export async function isStylistSlotFree(
   } as never);
 
   return conflicts.length === 0;
+}
+
+/**
+ * Comprueba que el hueco esté libre en Google Calendar para ese peluquero
+ * (cubre reservas apuntadas a mano, no solo las hechas desde la web). Se
+ * llama fuera de la transacción de base de datos porque es una llamada de
+ * red externa.
+ */
+export async function isCalendarSlotFree(
+  stylistSlug: string,
+  startsAt: Date,
+  endsAt: Date,
+  excludeEventId?: string | null,
+): Promise<boolean> {
+  const calendarId = calendarIdForStylist(stylistSlug);
+  if (!calendarId) return true; // sin calendario configurado, no bloquea
+
+  const turnaround = salon.turnaroundMin * 60_000;
+  const paddedStart = new Date(startsAt.getTime() - turnaround);
+  const paddedEnd = new Date(endsAt.getTime() + turnaround);
+  const events = await listBusyEvents(
+    calendarId,
+    paddedStart.toISOString(),
+    paddedEnd.toISOString(),
+  );
+  const padded: Interval = { start: paddedStart.getTime(), end: paddedEnd.getTime() };
+  return !events.some((ev) => {
+    if (excludeEventId && ev.id === excludeEventId) return false;
+    return overlaps(padded, {
+      start: new Date(ev.startIso).getTime(),
+      end: new Date(ev.endIso).getTime(),
+    });
+  });
 }
 
 type TxClientWithCount = TxClient & {

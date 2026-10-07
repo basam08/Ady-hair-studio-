@@ -71,7 +71,7 @@ mensaje en consola** en lugar de fallar — el flujo de reservas funciona igual.
 |---|---|---|
 | Email | `RESEND_API_KEY`, `EMAIL_FROM` | API de [Resend](https://resend.com) (sin SDK), 3000 emails/mes gratis. |
 | WhatsApp / SMS | `TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN`, `TWILIO_WHATSAPP_FROM` | API REST de Twilio, sin SDK. |
-| Google Calendar | `GOOGLE_CALENDAR_ID`, `GOOGLE_SERVICE_ACCOUNT_EMAIL`, `GOOGLE_SERVICE_ACCOUNT_PRIVATE_KEY` | Cuenta de servicio con acceso al calendario. |
+| Google Calendar | `GOOGLE_CALENDAR_ID_<SLUG>` por peluquero (o `GOOGLE_CALENDAR_ID` como respaldo), `GOOGLE_SERVICE_ACCOUNT_EMAIL`, `GOOGLE_SERVICE_ACCOUNT_PRIVATE_KEY` | Un calendario por peluquero; una reserva apuntada a mano en su calendario también bloquea el hueco en la web. |
 | Google Sheets | `GOOGLE_SHEETS_ID` (+ misma cuenta de servicio) | Copia cada reserva como fila nueva; no es la fuente de la verdad. |
 
 **Recordatorios**: `GET /api/cron/reminders` (cabecera

@@ -387,7 +387,11 @@ export function BookingWizard({
             servicios distintos, y te lo indicaremos si eliges algo que no
             hace él o ella.
           </p>
-          <div className="grid gap-px border border-line bg-line sm:grid-cols-3">
+          <div
+            className={`mx-auto grid gap-px border border-line bg-line ${
+              stylists.length <= 2 ? "max-w-md sm:grid-cols-2" : "sm:grid-cols-3"
+            }`}
+          >
             {stylists.map((s) => {
               const active = stylistSlug === s.slug;
               return (
