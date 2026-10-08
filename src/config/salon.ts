@@ -107,12 +107,12 @@ export const salon = {
   ] satisfies StylistDef[],
 
   /**
-   * Fecha (hora local) de lanzamiento oficial de las reservas online. Antes
-   * de esa fecha la reserva funciona igual (para poder hacer pruebas o una
-   * demo), pero /reservar muestra un aviso de que aún está en fase de
-   * pruebas y esas citas podrían no atenderse.
+   * Si tiene una fecha, las reservas online quedan cerradas del todo
+   * (bloqueo real, no solo un aviso) hasta que llegue la hora de apertura
+   * de ese día. Pensado para pausas puntuales (obras, viaje…). Se
+   * reabre solo, sin que haga falta tocar nada más. `null` = sin pausa.
    */
-  bookingLaunchDate: "2026-10-01",
+  bookingClosedUntilDate: "2026-10-13" as string | null,
 
   /**
    * Cuánto se tarda como mínimo en pasar de un cliente al siguiente con el
@@ -591,11 +591,25 @@ export const salon = {
 
 export type SalonConfig = typeof salon;
 
-/** True si ya se ha alcanzado salon.bookingLaunchDate (00:00 hora local). */
-export function isBookingLaunched(now: Date = new Date()): boolean {
-  const [year, month, day] = salon.bookingLaunchDate.split("-").map(Number);
-  const launch = zonedWallTimeToUtc(salon.timeZone, year, month, day, 0, 0);
-  return now.getTime() >= launch.getTime();
+/**
+ * Instante (hora local del negocio) en el que se reabren las reservas:
+ * la hora de apertura del primer bloque de ese día. null si no hay
+ * ninguna pausa configurada o si ese día está cerrado.
+ */
+export function bookingReopensAt(): Date | null {
+  if (!salon.bookingClosedUntilDate) return null;
+  const [year, month, day] = salon.bookingClosedUntilDate.split("-").map(Number);
+  const weekday = new Date(Date.UTC(year, month - 1, day)).getUTCDay() as WeekDay;
+  const firstBlock = (salon.hours[weekday] ?? [])[0];
+  if (!firstBlock) return null;
+  const [hour, minute] = firstBlock.open.split(":").map(Number);
+  return zonedWallTimeToUtc(salon.timeZone, year, month, day, hour, minute);
+}
+
+/** True si las reservas online están cerradas ahora mismo. */
+export function isBookingPaused(now: Date = new Date()): boolean {
+  const reopensAt = bookingReopensAt();
+  return reopensAt !== null && now.getTime() < reopensAt.getTime();
 }
 
 /** Servicios de mujer que Ady sí hace (tinte sencillo, no mechas ni técnicas). */

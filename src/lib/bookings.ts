@@ -1,7 +1,7 @@
 import "server-only";
 import { randomBytes } from "node:crypto";
 import type { Booking } from "@prisma/client";
-import { salon, canStylistPerform } from "@/config/salon";
+import { salon, canStylistPerform, isBookingPaused } from "@/config/salon";
 import { prisma } from "@/lib/db";
 import {
   isStylistSlotFree,
@@ -36,6 +36,7 @@ export class BookingError extends Error {
       | "SLOT_TAKEN"
       | "OUT_OF_HOURS"
       | "TOO_SOON"
+      | "BOOKING_PAUSED"
       | "NOT_FOUND"
       | "ALREADY_CANCELLED",
     message: string,
@@ -64,6 +65,13 @@ export async function createBooking(
   input: CreateInput,
   opts: { source: "web" | "admin" } = { source: "web" },
 ): Promise<Booking> {
+  if (opts.source === "web" && isBookingPaused()) {
+    throw new BookingError(
+      "BOOKING_PAUSED",
+      "Las reservas online están cerradas temporalmente",
+    );
+  }
+
   const service = await prisma.service.findUnique({
     where: { slug: input.serviceSlug },
   });
