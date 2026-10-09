@@ -3,7 +3,7 @@ import path from "node:path";
 import { type NextRequest } from "next/server";
 import { prisma } from "@/lib/db";
 import { withAdmin, jsonError } from "@/lib/api";
-import { isValidDateKey, formatDateInZone, formatTimeInZone } from "@/lib/time";
+import { isValidDateKey, formatShortDateInZone, formatTimeInZone } from "@/lib/time";
 import { salon } from "@/config/salon";
 import { buildIncomeReportPdf } from "@/lib/pdf/income-report";
 
@@ -34,7 +34,7 @@ export const GET = withAdmin(async (req: NextRequest) => {
   });
 
   const rows = bookings.map((b) => ({
-    dateLabel: formatDateInZone(salon.timeZone, b.startsAt),
+    dateLabel: formatShortDateInZone(salon.timeZone, b.startsAt),
     time: formatTimeInZone(salon.timeZone, b.startsAt),
     serviceName: b.serviceName,
     stylistName: b.stylist?.name ?? "Sin asignar",

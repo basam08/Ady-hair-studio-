@@ -150,7 +150,12 @@ export async function buildIncomeReportPdf(
       closeDaySubtotal();
       currentDay = row.dateLabel;
     }
-    page.drawText(row.dateLabel, { x: MARGIN + COLS[0].x + 4, y, size: 9, font });
+    page.drawText(truncateToWidth(font, row.dateLabel, 9, COLS[0].w - 8), {
+      x: MARGIN + COLS[0].x + 4,
+      y,
+      size: 9,
+      font,
+    });
     page.drawText(row.time, { x: MARGIN + COLS[1].x + 4, y, size: 9, font });
     page.drawText(truncateToWidth(font, row.serviceName, 9, COLS[2].w - 12), {
       x: MARGIN + COLS[2].x + 4,

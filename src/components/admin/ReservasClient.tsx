@@ -3,6 +3,7 @@
 import { Fragment, useCallback, useEffect, useState } from "react";
 import { salon, formatPriceCents } from "@/config/salon";
 import { formatTimeInZone } from "@/lib/time";
+import { CircularTimePicker } from "@/components/admin/CircularTimePicker";
 
 interface Booking {
   id: string;
@@ -375,6 +376,8 @@ function BookingForm({
   const [form, setForm] = useState<BookingFormValues>(initial);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const [timePickerOpen, setTimePickerOpen] = useState(false);
+  const [timePickerMode, setTimePickerMode] = useState<"hour" | "minute">("hour");
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
@@ -443,15 +446,35 @@ function BookingForm({
           onChange={(e) => setForm({ ...form, date: e.target.value })}
         />
       </label>
-      <label className="block">
+      <label className="relative block">
         <span className="field-label">Hora</span>
-        <input
-          type="time"
-          required
-          className="field"
-          value={form.time}
-          onChange={(e) => setForm({ ...form, time: e.target.value })}
-        />
+        <button
+          type="button"
+          onClick={() => {
+            setTimePickerMode("hour");
+            setTimePickerOpen((v) => !v);
+          }}
+          className="field text-left"
+        >
+          {form.time || "Elegir hora"}
+        </button>
+        {timePickerOpen && (
+          <div className="absolute z-10 mt-1 border border-ink bg-oat p-4 shadow-lg">
+            <CircularTimePicker
+              value={form.time || "10:00"}
+              onChange={(time) => setForm({ ...form, time })}
+              mode={timePickerMode}
+              onModeChange={setTimePickerMode}
+            />
+            <button
+              type="button"
+              onClick={() => setTimePickerOpen(false)}
+              className="btn btn-primary mt-3 w-full"
+            >
+              Listo
+            </button>
+          </div>
+        )}
       </label>
       <label className="block">
         <span className="field-label">Nombre</span>

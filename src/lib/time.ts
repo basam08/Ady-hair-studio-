@@ -139,3 +139,13 @@ export function formatDateInZone(timeZone: string, date: Date): string {
     year: "numeric",
   }).format(date);
 }
+
+/** Fecha corta "DD/MM/AAAA", para tablas e informes con poco ancho. */
+export function formatShortDateInZone(timeZone: string, date: Date): string {
+  return new Intl.DateTimeFormat("es-ES", {
+    timeZone,
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+  }).format(date);
+}
