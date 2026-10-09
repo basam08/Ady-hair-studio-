@@ -90,7 +90,15 @@ export function ReservasClient({
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ status: next }),
     });
-    if (res.ok) load();
+    if (!res.ok) return;
+    // Al completar una cita, desaparece al momento de la lista de trabajo
+    // (salvo que se esté filtrando justo por "Completadas"); se puede
+    // seguir consultando luego con ese filtro.
+    if (next === "COMPLETED" && status !== "COMPLETED") {
+      setBookings((rows) => rows.filter((b) => b.id !== id));
+    } else {
+      load();
+    }
   }
 
   const { from, to } = rangeFor(preset);

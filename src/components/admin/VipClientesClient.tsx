@@ -22,6 +22,7 @@ export function VipClientesClient() {
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [formOpen, setFormOpen] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
 
   function load(query: string) {
     setLoading(true);
@@ -36,6 +37,33 @@ export function VipClientesClient() {
     return () => clearTimeout(t);
   }, [q]);
 
+  function startCreate() {
+    setEditingId(null);
+    setForm(EMPTY_FORM);
+    setError(null);
+    setFormOpen(true);
+  }
+
+  function startEdit(c: VipClient) {
+    setEditingId(c.id);
+    setForm({
+      name: c.name,
+      hairColor: c.hairColor,
+      colorHex: c.colorHex ?? "#c9a87c",
+      phone: c.phone ?? "",
+      notes: c.notes ?? "",
+    });
+    setError(null);
+    setFormOpen(true);
+  }
+
+  function closeForm() {
+    setFormOpen(false);
+    setEditingId(null);
+    setForm(EMPTY_FORM);
+    setError(null);
+  }
+
   async function submit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
@@ -45,18 +73,20 @@ export function VipClientesClient() {
     }
     setBusy(true);
     try {
-      const res = await fetch("/api/admin/vip-clients", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(form),
-      });
+      const res = await fetch(
+        editingId ? `/api/admin/vip-clients/${editingId}` : "/api/admin/vip-clients",
+        {
+          method: editingId ? "PUT" : "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(form),
+        },
+      );
       const data = await res.json();
       if (!res.ok) {
         setError(data?.error?.message ?? "No se pudo guardar.");
         return;
       }
-      setForm(EMPTY_FORM);
-      setFormOpen(false);
+      closeForm();
       load(q);
     } finally {
       setBusy(false);
@@ -79,7 +109,7 @@ export function VipClientesClient() {
         />
         <button
           type="button"
-          onClick={() => setFormOpen((v) => !v)}
+          onClick={() => (formOpen ? closeForm() : startCreate())}
           className="btn btn-primary"
         >
           {formOpen ? "Cancelar" : "+ Añadir cliente VIP"}
@@ -91,6 +121,9 @@ export function VipClientesClient() {
           onSubmit={submit}
           className="mt-4 grid gap-3 border border-ink bg-cream p-5 sm:grid-cols-2"
         >
+          <p className="field-label sm:col-span-2">
+            {editingId ? "Editando cliente" : "Nuevo cliente"}
+          </p>
           {error && (
             <p className="border border-persimmon bg-persimmon/10 px-3 py-2 text-sm text-persimmon-dark sm:col-span-2">
               {error}
@@ -139,9 +172,16 @@ export function VipClientesClient() {
               onChange={(e) => setForm({ ...form, notes: e.target.value })}
             />
           </label>
-          <div className="sm:col-span-2">
+          <div className="flex items-center gap-3 sm:col-span-2">
             <button type="submit" className="btn btn-primary" disabled={busy}>
               {busy ? "Guardando…" : "Guardar"}
+            </button>
+            <button
+              type="button"
+              onClick={closeForm}
+              className="u-mono text-xs uppercase link-underline"
+            >
+              Cancelar
             </button>
           </div>
         </form>
@@ -158,13 +198,22 @@ export function VipClientesClient() {
               key={c.id}
               className="group relative border border-ink bg-cream p-5"
             >
-              <button
-                type="button"
-                onClick={() => remove(c.id)}
-                className="u-mono absolute right-3 top-3 text-xs uppercase text-cocoa opacity-0 transition-opacity link-underline group-hover:opacity-100"
-              >
-                Quitar
-              </button>
+              <div className="absolute right-3 top-3 flex gap-3 opacity-0 transition-opacity group-hover:opacity-100">
+                <button
+                  type="button"
+                  onClick={() => startEdit(c)}
+                  className="u-mono text-xs uppercase text-cocoa link-underline"
+                >
+                  Editar
+                </button>
+                <button
+                  type="button"
+                  onClick={() => remove(c.id)}
+                  className="u-mono text-xs uppercase text-persimmon link-underline"
+                >
+                  Quitar
+                </button>
+              </div>
               <div className="flex items-center gap-3">
                 <span
                   className="h-8 w-8 shrink-0 rounded-full border border-ink"

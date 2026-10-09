@@ -1,5 +1,5 @@
 import "server-only";
-import { PDFDocument, StandardFonts, rgb } from "pdf-lib";
+import { PDFDocument, StandardFonts, rgb, type PDFFont } from "pdf-lib";
 
 const PAGE_W = 595.28; // A4 en puntos
 const PAGE_H = 841.89;
@@ -29,8 +29,20 @@ function formatEuros(cents: number): string {
   });
 }
 
-function truncate(s: string, max: number): string {
-  return s.length > max ? `${s.slice(0, max - 1)}…` : s;
+// Recorta por ancho real del texto (no por nº de caracteres), para que
+// nunca invada la columna de al lado por culpa de letras anchas (m, w…).
+function truncateToWidth(
+  font: PDFFont,
+  text: string,
+  size: number,
+  maxWidth: number,
+): string {
+  if (font.widthOfTextAtSize(text, size) <= maxWidth) return text;
+  let end = text.length;
+  while (end > 0 && font.widthOfTextAtSize(`${text.slice(0, end)}…`, size) > maxWidth) {
+    end--;
+  }
+  return `${text.slice(0, end)}…`;
 }
 
 const COLS = [
@@ -140,13 +152,18 @@ export async function buildIncomeReportPdf(
     }
     page.drawText(row.dateLabel, { x: MARGIN + COLS[0].x + 4, y, size: 9, font });
     page.drawText(row.time, { x: MARGIN + COLS[1].x + 4, y, size: 9, font });
-    page.drawText(truncate(row.serviceName, 32), {
+    page.drawText(truncateToWidth(font, row.serviceName, 9, COLS[2].w - 12), {
       x: MARGIN + COLS[2].x + 4,
       y,
       size: 9,
       font,
     });
-    page.drawText(row.stylistName, { x: MARGIN + COLS[3].x + 4, y, size: 9, font });
+    page.drawText(truncateToWidth(font, row.stylistName, 9, COLS[3].w - 12), {
+      x: MARGIN + COLS[3].x + 4,
+      y,
+      size: 9,
+      font,
+    });
     page.drawText(formatEuros(row.priceCents), {
       x: MARGIN + COLS[4].x + 4,
       y,
