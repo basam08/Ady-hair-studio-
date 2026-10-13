@@ -20,19 +20,25 @@ export default async function ReservarPage({
   const { servicio } = await searchParams;
 
   if (isBookingPaused()) {
-    const reopensAt = bookingReopensAt()!;
+    const reopensAt = bookingReopensAt();
     return (
       <div className="mx-auto max-w-3xl px-5 py-16 md:py-24">
         <p className="u-eyebrow">Reserva</p>
         <h1 className="font-display mt-4 text-5xl md:text-6xl">Pide tu cita</h1>
         <div className="rule-sweep mt-6 mb-10 h-px w-full bg-ink" />
         <p className="border border-persimmon bg-persimmon/10 px-4 py-3 text-sm text-persimmon-dark">
-          Las reservas online están cerradas por ahora. Vuelven a abrirse el{" "}
-          <strong>
-            {formatDateInZone(salon.timeZone, reopensAt)} a las{" "}
-            {formatTimeInZone(salon.timeZone, reopensAt)}
-          </strong>
-          . Mientras tanto puedes escribirnos por WhatsApp:{" "}
+          Las reservas online están cerradas por ahora.{" "}
+          {reopensAt ? (
+            <>
+              Vuelven a abrirse el{" "}
+              <strong>
+                {formatDateInZone(salon.timeZone, reopensAt)} a las{" "}
+                {formatTimeInZone(salon.timeZone, reopensAt)}
+              </strong>
+              .{" "}
+            </>
+          ) : null}
+          Mientras tanto puedes escribirnos por WhatsApp:{" "}
           <a
             href={`https://wa.me/${salon.contact.whatsapp}`}
             target="_blank"

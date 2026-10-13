@@ -109,10 +109,18 @@ export const salon = {
   /**
    * Si tiene una fecha, las reservas online quedan cerradas del todo
    * (bloqueo real, no solo un aviso) hasta que llegue la hora de apertura
-   * de ese día. Pensado para pausas puntuales (obras, viaje…). Se
-   * reabre solo, sin que haga falta tocar nada más. `null` = sin pausa.
+   * de ese día. Pensado para pausas puntuales con fecha de vuelta ya
+   * conocida. Se reabre solo. `null` = sin pausa con fecha.
    */
-  bookingClosedUntilDate: "2026-10-13" as string | null,
+  bookingClosedUntilDate: null as string | null,
+
+  /**
+   * Cierre total sin fecha de reapertura todavía decidida (obras, viaje
+   * largo…). Mientras esté en `true`, las reservas online quedan
+   * cerradas pase lo que pase con bookingClosedUntilDate. Hay que
+   * volver a poner `false` a mano cuando se sepa cuándo se reabre.
+   */
+  bookingClosedIndefinitely: true,
 
   /**
    * Cuánto se tarda como mínimo en pasar de un cliente al siguiente con el
@@ -608,6 +616,7 @@ export function bookingReopensAt(): Date | null {
 
 /** True si las reservas online están cerradas ahora mismo. */
 export function isBookingPaused(now: Date = new Date()): boolean {
+  if (salon.bookingClosedIndefinitely) return true;
   const reopensAt = bookingReopensAt();
   return reopensAt !== null && now.getTime() < reopensAt.getTime();
 }
