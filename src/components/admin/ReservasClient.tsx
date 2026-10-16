@@ -5,7 +5,7 @@ import { salon, formatPriceCents } from "@/config/salon";
 import { formatTimeInZone } from "@/lib/time";
 import { CircularTimePicker } from "@/components/admin/CircularTimePicker";
 
-interface Booking {
+export interface Booking {
   id: string;
   serviceName: string;
   priceCents: number;
@@ -356,7 +356,7 @@ export function ReservasClient({
   );
 }
 
-function valuesFromBooking(
+export function valuesFromBooking(
   b: Booking,
   stylists: { slug: string }[],
 ): BookingFormValues {

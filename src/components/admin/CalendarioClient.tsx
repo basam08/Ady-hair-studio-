@@ -3,18 +3,17 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { salon, type WeekDay } from "@/config/salon";
 import { formatHhMm, formatTimeInZone, parseHhMm } from "@/lib/time";
-import { BookingForm, type BookingFormValues } from "@/components/admin/ReservasClient";
+import {
+  BookingForm,
+  valuesFromBooking,
+  type Booking,
+  type BookingFormValues,
+} from "@/components/admin/ReservasClient";
 
-interface Booking {
-  id: string;
-  serviceName: string;
-  priceCents: number;
-  durationMin: number;
-  startsAt: string;
-  status: string;
-  client: { name: string; phone: string };
-  service: { slug: string };
-  stylist: { name: string; slug: string } | null;
+interface FormState {
+  mode: "create" | "edit";
+  id?: string;
+  values: BookingFormValues;
 }
 
 type ViewMode = "day" | "week";
@@ -58,7 +57,7 @@ export function CalendarioClient({
   });
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [loading, setLoading] = useState(true);
-  const [addPrefill, setAddPrefill] = useState<BookingFormValues | null>(null);
+  const [formState, setFormState] = useState<FormState | null>(null);
 
   const weekStart = useMemo(() => startOfWeek(anchor), [anchor]);
   const rangeFrom = mode === "day" ? anchor : weekStart;
@@ -80,16 +79,23 @@ export function CalendarioClient({
   useEffect(load, [load]);
 
   function openAddForm(stylistSlug: string, date: Date, time: string) {
-    setAddPrefill({
-      serviceSlug: services[0]?.slug ?? "",
-      stylistSlug,
-      date: dateKey(date),
-      time,
-      name: "",
-      phone: "",
-      email: "",
-      note: "",
+    setFormState({
+      mode: "create",
+      values: {
+        serviceSlug: services[0]?.slug ?? "",
+        stylistSlug,
+        date: dateKey(date),
+        time,
+        name: "",
+        phone: "",
+        email: "",
+        note: "",
+      },
     });
+  }
+
+  function openEditForm(b: Booking) {
+    setFormState({ mode: "edit", id: b.id, values: valuesFromBooking(b, stylists) });
   }
 
   function step(dir: 1 | -1) {
@@ -170,6 +176,7 @@ export function CalendarioClient({
             stylists={stylists}
             bookings={bookings}
             onSlotClick={openAddForm}
+            onBookingClick={openEditForm}
           />
         ) : (
           <WeekAgenda
@@ -177,14 +184,15 @@ export function CalendarioClient({
             stylists={stylists}
             bookings={bookings}
             onAdd={openAddForm}
+            onBookingClick={openEditForm}
           />
         )}
       </div>
 
-      {addPrefill && (
+      {formState && (
         <div
           className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-ink/50 p-4 py-10"
-          onClick={() => setAddPrefill(null)}
+          onClick={() => setFormState(null)}
         >
           <div
             className="w-full max-w-xl"
@@ -193,13 +201,17 @@ export function CalendarioClient({
             <BookingForm
               services={services}
               stylists={stylists}
-              initial={addPrefill}
-              endpoint="/api/admin/bookings"
-              method="POST"
-              submitLabel="Crear cita"
-              onCancel={() => setAddPrefill(null)}
+              initial={formState.values}
+              endpoint={
+                formState.mode === "create"
+                  ? "/api/admin/bookings"
+                  : `/api/admin/bookings/${formState.id}`
+              }
+              method={formState.mode === "create" ? "POST" : "PUT"}
+              submitLabel={formState.mode === "create" ? "Crear cita" : "Guardar cambios"}
+              onCancel={() => setFormState(null)}
               onDone={() => {
-                setAddPrefill(null);
+                setFormState(null);
                 load();
               }}
             />
@@ -215,11 +227,13 @@ function DayGrid({
   stylists,
   bookings,
   onSlotClick,
+  onBookingClick,
 }: {
   date: Date;
   stylists: { slug: string; name: string }[];
   bookings: Booking[];
   onSlotClick: (stylistSlug: string, date: Date, time: string) => void;
+  onBookingClick: (b: Booking) => void;
 }) {
   const weekday = date.getDay() as WeekDay;
   const blocks = salon.hours[weekday] ?? [];
@@ -271,6 +285,7 @@ function DayGrid({
           hourMarks={hourMarks}
           bookings={dayBookings.filter((b) => b.stylist?.slug === st.slug)}
           onSlotClick={onSlotClick}
+          onBookingClick={onBookingClick}
         />
       ))}
     </div>
@@ -287,6 +302,7 @@ function StylistColumn({
   hourMarks,
   bookings,
   onSlotClick,
+  onBookingClick,
 }: {
   stylist: { slug: string; name: string };
   date: Date;
@@ -297,6 +313,7 @@ function StylistColumn({
   hourMarks: number[];
   bookings: Booking[];
   onSlotClick: (stylistSlug: string, date: Date, time: string) => void;
+  onBookingClick: (b: Booking) => void;
 }) {
   function handleClick(e: React.MouseEvent<HTMLDivElement>) {
     const rect = e.currentTarget.getBoundingClientRect();
@@ -333,10 +350,13 @@ function StylistColumn({
           return (
             <div
               key={b.id}
-              onClick={(e) => e.stopPropagation()}
-              className="absolute left-1 right-1 overflow-hidden rounded-sm border border-ink bg-ink px-1.5 py-1 text-oat"
+              onClick={(e) => {
+                e.stopPropagation();
+                onBookingClick(b);
+              }}
+              className="absolute left-1 right-1 cursor-pointer overflow-hidden rounded-sm border border-ink bg-ink px-1.5 py-1 text-oat hover:bg-persimmon"
               style={{ top, height }}
-              title={`${formatTimeInZone(salon.timeZone, start)} · ${b.serviceName} · ${b.client.name}`}
+              title={`Editar: ${formatTimeInZone(salon.timeZone, start)} · ${b.serviceName} · ${b.client.name}`}
             >
               <p className="truncate text-[11px] font-semibold leading-tight">
                 {formatTimeInZone(salon.timeZone, start)} · {b.serviceName}
@@ -355,11 +375,13 @@ function WeekAgenda({
   stylists,
   bookings,
   onAdd,
+  onBookingClick,
 }: {
   weekStart: Date;
   stylists: { slug: string; name: string }[];
   bookings: Booking[];
   onAdd: (stylistSlug: string, date: Date, time: string) => void;
+  onBookingClick: (b: Booking) => void;
 }) {
   const days = Array.from({ length: 7 }, (_, i) => addDays(weekStart, i));
 
@@ -385,10 +407,12 @@ function WeekAgenda({
               <>
                 <div className="mt-2 flex flex-col gap-1">
                   {dayBookings.map((b) => (
-                    <div
+                    <button
                       key={b.id}
-                      className="border border-ink bg-cream px-1.5 py-1 text-[11px] leading-tight"
-                      title={`${b.serviceName} · ${b.client.name}`}
+                      type="button"
+                      onClick={() => onBookingClick(b)}
+                      className="border border-ink bg-cream px-1.5 py-1 text-left text-[11px] leading-tight hover:bg-oat"
+                      title={`Editar: ${b.serviceName} · ${b.client.name}`}
                     >
                       <p className="u-mono font-semibold">
                         {formatTimeInZone(salon.timeZone, new Date(b.startsAt))} ·{" "}
@@ -396,7 +420,7 @@ function WeekAgenda({
                       </p>
                       <p className="truncate">{b.serviceName}</p>
                       <p className="truncate text-cocoa">{b.client.name}</p>
-                    </div>
+                    </button>
                   ))}
                   {dayBookings.length === 0 && (
                     <p className="mt-1 text-center text-[11px] text-cocoa">Sin citas</p>
