@@ -29,7 +29,7 @@ export interface BookingFormValues {
   note: string;
 }
 
-type RangePreset = "today" | "week" | "month";
+type RangePreset = "today" | "week" | "month" | "past30";
 
 function dateKey(d: Date): string {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(
@@ -45,8 +45,11 @@ function rangeFor(preset: RangePreset): { from: string; to: string } {
     // hoy
   } else if (preset === "week") {
     to.setDate(to.getDate() + 7);
-  } else {
+  } else if (preset === "month") {
     to.setMonth(to.getMonth() + 1);
+  } else {
+    // past30: hacia atrás, para citas ya pasadas
+    from.setDate(from.getDate() - 30);
   }
   return { from: dateKey(from), to: dateKey(to) };
 }
@@ -65,7 +68,7 @@ export function ReservasClient({
   services: { slug: string; name: string }[];
   stylists: { slug: string; name: string }[];
 }) {
-  const [preset, setPreset] = useState<RangePreset>("week");
+  const [range, setRange] = useState(() => rangeFor("week"));
   const [status, setStatus] = useState("ALL");
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [loading, setLoading] = useState(true);
@@ -74,14 +77,13 @@ export function ReservasClient({
 
   const load = useCallback(() => {
     setLoading(true);
-    const { from, to } = rangeFor(preset);
     fetch(
-      `/api/admin/bookings?from=${from}&to=${to}&status=${status}`,
+      `/api/admin/bookings?from=${range.from}&to=${range.to}&status=${status}`,
     )
       .then((r) => r.json())
       .then((d) => setBookings(d.bookings ?? []))
       .finally(() => setLoading(false));
-  }, [preset, status]);
+  }, [range, status]);
 
   useEffect(load, [load]);
 
@@ -102,21 +104,19 @@ export function ReservasClient({
     }
   }
 
-  const { from, to } = rangeFor(preset);
-
   return (
     <div>
       <div className="flex flex-wrap items-baseline justify-between gap-3">
         <h1 className="font-display text-4xl">Reservas</h1>
         <div className="flex gap-3">
           <a
-            href={`/api/admin/export?from=${from}&to=${to}`}
+            href={`/api/admin/export?from=${range.from}&to=${range.to}`}
             className="u-mono text-xs uppercase tracking-widest link-underline"
           >
             Exportar CSV
           </a>
           <a
-            href={`/api/admin/export-pdf?from=${from}&to=${to}`}
+            href={`/api/admin/export-pdf?from=${range.from}&to=${range.to}`}
             className="u-mono text-xs uppercase tracking-widest link-underline"
           >
             Exportar PDF
@@ -158,17 +158,21 @@ export function ReservasClient({
         </div>
       )}
 
-      <div className="mt-6 flex flex-wrap gap-2">
-        {(["today", "week", "month"] as RangePreset[]).map((p) => (
+      <div className="mt-6 flex flex-wrap items-center gap-2">
+        {(["today", "week", "month", "past30"] as RangePreset[]).map((p) => (
           <button
             key={p}
             type="button"
-            onClick={() => setPreset(p)}
-            className={`u-mono border border-line px-3 py-1.5 text-xs uppercase tracking-widest ${
-              preset === p ? "bg-ink text-oat" : "bg-cream"
-            }`}
+            onClick={() => setRange(rangeFor(p))}
+            className="u-mono border border-line bg-cream px-3 py-1.5 text-xs uppercase tracking-widest hover:bg-oat"
           >
-            {p === "today" ? "Hoy" : p === "week" ? "7 días" : "30 días"}
+            {p === "today"
+              ? "Hoy"
+              : p === "week"
+                ? "Próximos 7 días"
+                : p === "month"
+                  ? "Próximos 30 días"
+                  : "Últimos 30 días"}
           </button>
         ))}
         <select
@@ -182,6 +186,23 @@ export function ReservasClient({
           <option value="CANCELLED">Canceladas</option>
           <option value="NO_SHOW">No vino</option>
         </select>
+      </div>
+
+      <div className="mt-3 flex flex-wrap items-center gap-2">
+        <span className="field-label">Rango libre</span>
+        <input
+          type="date"
+          className="field w-auto"
+          value={range.from}
+          onChange={(e) => setRange({ ...range, from: e.target.value })}
+        />
+        <span className="text-cocoa">a</span>
+        <input
+          type="date"
+          className="field w-auto"
+          value={range.to}
+          onChange={(e) => setRange({ ...range, to: e.target.value })}
+        />
       </div>
 
       <div className="mt-6 overflow-x-auto">
