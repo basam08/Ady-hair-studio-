@@ -1,9 +1,7 @@
 "use client";
 
 const HOURS = Array.from({ length: 14 }, (_, i) => i + 8); // 08..21
-// Solo en punto y media: evita citas a horas sueltas (10:45, etc.) que no
-// encajan con la duración de los servicios.
-const MINUTES = [0, 30];
+const MINUTES = [0, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55];
 
 function polar(index: number, total: number, radiusPct: number) {
   const angle = (index / total) * 2 * Math.PI - Math.PI / 2;
@@ -43,6 +41,7 @@ export function CircularTimePicker({
 
   const items = mode === "hour" ? HOURS : MINUTES;
   const selected = mode === "hour" ? hour : minute;
+  const pick = mode === "hour" ? pickHour : pickMinute;
 
   return (
     <div className="w-60">
@@ -63,42 +62,25 @@ export function CircularTimePicker({
           {pad(minute)}
         </button>
       </div>
-      {mode === "hour" ? (
-        <div className="relative mx-auto h-52 w-52 rounded-full border border-ink bg-oat">
-          {items.map((n, i) => {
-            const pos = polar(i, items.length, 40);
-            const isSelected = n === selected;
-            return (
-              <button
-                key={n}
-                type="button"
-                onClick={() => pickHour(n)}
-                className={`absolute flex h-8 w-8 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full u-mono text-xs transition-colors ${
-                  isSelected ? "bg-ink text-oat" : "text-ink hover:bg-cream"
-                }`}
-                style={pos}
-              >
-                {n}
-              </button>
-            );
-          })}
-        </div>
-      ) : (
-        <div className="mx-auto flex h-52 w-52 overflow-hidden rounded-full border border-ink bg-oat">
-          {MINUTES.map((n) => (
+      <div className="relative mx-auto h-52 w-52 rounded-full border border-ink bg-oat">
+        {items.map((n, i) => {
+          const pos = polar(i, items.length, 40);
+          const isSelected = n === selected;
+          return (
             <button
               key={n}
               type="button"
-              onClick={() => pickMinute(n)}
-              className={`u-mono flex flex-1 items-center justify-center text-sm transition-colors ${
-                n === selected ? "bg-ink text-oat" : "text-ink hover:bg-cream"
+              onClick={() => pick(n)}
+              className={`absolute flex h-8 w-8 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full u-mono text-xs transition-colors ${
+                isSelected ? "bg-ink text-oat" : "text-ink hover:bg-cream"
               }`}
+              style={pos}
             >
-              :{pad(n)}
+              {mode === "hour" ? n : pad(n)}
             </button>
-          ))}
-        </div>
-      )}
+          );
+        })}
+      </div>
     </div>
   );
 }
