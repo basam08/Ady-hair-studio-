@@ -98,6 +98,18 @@ export function CalendarioClient({
     setFormState({ mode: "edit", id: b.id, values: valuesFromBooking(b, stylists) });
   }
 
+  async function cancelBooking(id: string) {
+    const res = await fetch(`/api/admin/bookings/${id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ status: "CANCELLED" }),
+    });
+    if (res.ok) {
+      setFormState(null);
+      load();
+    }
+  }
+
   function step(dir: 1 | -1) {
     setAnchor((d) => addDays(d, (mode === "day" ? 1 : 7) * dir));
   }
@@ -215,6 +227,15 @@ export function CalendarioClient({
                 load();
               }}
             />
+            {formState.mode === "edit" && formState.id && (
+              <button
+                type="button"
+                onClick={() => cancelBooking(formState.id!)}
+                className="u-mono mt-3 w-full border border-persimmon bg-cream py-2 text-xs uppercase tracking-widest text-persimmon hover:bg-persimmon/10"
+              >
+                Cancelar esta cita
+              </button>
+            )}
           </div>
         </div>
       )}

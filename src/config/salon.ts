@@ -9,7 +9,7 @@
  * `npm run db:seed`.
  */
 
-import { zonedWallTimeToUtc } from "@/lib/time";
+import { zonedWallTimeToUtc, parseHhMm } from "@/lib/time";
 
 export type WeekDay = 0 | 1 | 2 | 3 | 4 | 5 | 6; // 0 = domingo
 
@@ -619,6 +619,25 @@ export function isBookingPaused(now: Date = new Date()): boolean {
   if (salon.bookingClosedIndefinitely) return true;
   const reopensAt = bookingReopensAt();
   return reopensAt !== null && now.getTime() < reopensAt.getTime();
+}
+
+/**
+ * True si una cita (fecha + hora de inicio + hora de fin, en minutos
+ * desde medianoche) cabe entera dentro de un bloque de apertura de ese
+ * día y no coincide con un festivo. Se usa tanto para reservas desde
+ * la web como desde el panel admin: fuera de horario no se puede
+ * atender a nadie, sea quien sea quien reserve.
+ */
+export function isWithinOpeningHours(
+  dateKeyStr: string,
+  startMin: number,
+  endMin: number,
+): boolean {
+  if (salon.closedDates.includes(dateKeyStr)) return false;
+  const [year, month, day] = dateKeyStr.split("-").map(Number);
+  const weekday = new Date(Date.UTC(year, month - 1, day)).getUTCDay() as WeekDay;
+  const blocks = salon.hours[weekday] ?? [];
+  return blocks.some((b) => startMin >= parseHhMm(b.open) && endMin <= parseHhMm(b.close));
 }
 
 /** Servicios de mujer que Ady sí hace (tinte sencillo, no mechas ni técnicas). */

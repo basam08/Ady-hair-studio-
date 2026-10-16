@@ -1,7 +1,12 @@
 import "server-only";
 import { randomBytes } from "node:crypto";
 import type { Booking } from "@prisma/client";
-import { salon, canStylistPerform, isBookingPaused } from "@/config/salon";
+import {
+  salon,
+  canStylistPerform,
+  isBookingPaused,
+  isWithinOpeningHours,
+} from "@/config/salon";
 import { prisma } from "@/lib/db";
 import {
   isStylistSlotFree,
@@ -147,6 +152,10 @@ export async function createBooking(
         `Reserva con al menos ${salon.minLeadHours} h de antelación`,
       );
     }
+  }
+
+  if (!isWithinOpeningHours(input.date, hour * 60 + minute, hour * 60 + minute + totalDurationMin)) {
+    throw new BookingError("OUT_OF_HOURS", "Esa hora está fuera del horario de apertura");
   }
 
   if (!(await isCalendarSlotFree(stylist.slug, startsAt, endsAt))) {
@@ -296,6 +305,10 @@ async function saveBookingChanges(
     if (startsAt.getTime() < minLead) {
       throw new BookingError("TOO_SOON", "Elige un hueco con más antelación");
     }
+  }
+
+  if (!isWithinOpeningHours(date, hour * 60 + minute, hour * 60 + minute + draft.durationMin)) {
+    throw new BookingError("OUT_OF_HOURS", "Esa hora está fuera del horario de apertura");
   }
 
   if (draft.stylistSlug) {
