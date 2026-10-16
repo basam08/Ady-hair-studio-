@@ -18,7 +18,7 @@ interface Booking {
   stylist: { name: string; slug: string } | null;
 }
 
-interface BookingFormValues {
+export interface BookingFormValues {
   serviceSlug: string;
   stylistSlug: string;
   date: string;
@@ -352,7 +352,7 @@ function valuesFromBooking(
   };
 }
 
-function BookingForm({
+export function BookingForm({
   services,
   stylists,
   initial,
