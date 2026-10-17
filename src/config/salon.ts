@@ -144,11 +144,12 @@ export const salon = {
    */
   hours: {
     1: [], // lunes cerrado
-    2: [{ open: "10:00", close: "20:00" }],
-    3: [{ open: "10:00", close: "20:00" }],
-    4: [{ open: "10:00", close: "20:00" }],
-    5: [{ open: "10:00", close: "20:00" }],
-    6: [{ open: "10:00", close: "14:00" }], // sábado
+    // Pausa para comer de 14:00 a 15:00 (martes a viernes).
+    2: [{ open: "10:00", close: "14:00" }, { open: "15:00", close: "20:00" }],
+    3: [{ open: "10:00", close: "14:00" }, { open: "15:00", close: "20:00" }],
+    4: [{ open: "10:00", close: "14:00" }, { open: "15:00", close: "20:00" }],
+    5: [{ open: "10:00", close: "14:00" }, { open: "15:00", close: "20:00" }],
+    6: [{ open: "10:00", close: "14:00" }], // sábado (cierra a las 14:00, sin pausa)
     0: [], // domingo cerrado
   } as Record<WeekDay, OpeningBlock[]>,
 
