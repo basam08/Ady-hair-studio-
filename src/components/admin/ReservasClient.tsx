@@ -20,6 +20,7 @@ export interface Booking {
 
 export interface BookingFormValues {
   serviceSlug: string;
+  extraSlugs: string[];
   stylistSlug: string;
   date: string;
   time: string;
@@ -138,6 +139,7 @@ export function ReservasClient({
             stylists={stylists}
             initial={{
               serviceSlug: services[0]?.slug ?? "",
+              extraSlugs: [],
               stylistSlug: stylists[0]?.slug ?? "",
               date: "",
               time: "",
@@ -363,6 +365,9 @@ export function valuesFromBooking(
   const d = new Date(b.startsAt);
   return {
     serviceSlug: b.service.slug,
+    // Las reservas combinadas solo guardan el servicio principal; al
+    // editar se parte de ese único servicio (se pueden añadir más).
+    extraSlugs: [],
     stylistSlug: b.stylist?.slug ?? stylists[0]?.slug ?? "",
     date: dateKey(d),
     time: formatTimeInZone(salon.timeZone, d),
@@ -435,14 +440,55 @@ export function BookingForm({
           {error}
         </p>
       )}
-      <label className="block">
-        <span className="field-label">Servicio</span>
-        <ServiceCombobox
-          services={services}
-          value={form.serviceSlug}
-          onChange={(slug) => setForm({ ...form, serviceSlug: slug })}
-        />
-      </label>
+      <div className="block sm:col-span-3">
+        <span className="field-label">Servicios</span>
+        <div className="flex flex-col gap-2">
+          <ServiceCombobox
+            services={services}
+            value={form.serviceSlug}
+            onChange={(slug) => setForm({ ...form, serviceSlug: slug })}
+          />
+          {form.extraSlugs.map((slug, i) => (
+            <div key={i} className="flex items-center gap-2">
+              <div className="flex-1">
+                <ServiceCombobox
+                  services={services}
+                  value={slug}
+                  onChange={(next) => {
+                    const copy = [...form.extraSlugs];
+                    copy[i] = next;
+                    setForm({ ...form, extraSlugs: copy });
+                  }}
+                />
+              </div>
+              <button
+                type="button"
+                onClick={() =>
+                  setForm({
+                    ...form,
+                    extraSlugs: form.extraSlugs.filter((_, idx) => idx !== i),
+                  })
+                }
+                className="u-mono text-xs uppercase text-persimmon link-underline"
+              >
+                Quitar
+              </button>
+            </div>
+          ))}
+          <button
+            type="button"
+            onClick={() =>
+              setForm({
+                ...form,
+                extraSlugs: [...form.extraSlugs, services[0]?.slug ?? ""],
+              })
+            }
+            className="u-mono self-start text-xs uppercase link-underline"
+          >
+            + Añadir otro servicio
+          </button>
+        </div>
+      </div>
       <label className="block">
         <span className="field-label">Peluquero/a</span>
         <select

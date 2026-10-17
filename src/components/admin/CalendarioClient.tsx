@@ -83,6 +83,7 @@ export function CalendarioClient({
       mode: "create",
       values: {
         serviceSlug: services[0]?.slug ?? "",
+        extraSlugs: [],
         stylistSlug,
         date: dateKey(date),
         time,

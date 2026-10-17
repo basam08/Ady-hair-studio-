@@ -58,6 +58,7 @@ export const POST = withAdmin(async (req: NextRequest) => {
     const booking = await createBooking(
       {
         serviceSlug: parsed.data.serviceSlug,
+        extraSlugs: parsed.data.extraSlugs,
         stylistSlug: parsed.data.stylistSlug,
         date: parsed.data.date,
         time: parsed.data.time,

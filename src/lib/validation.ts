@@ -90,6 +90,7 @@ export const vipClientCreateSchema = z.object({
 
 export const adminBookingCreateSchema = z.object({
   serviceSlug: z.string().trim().min(1).max(64),
+  extraSlugs: extraSlugsSchema.optional(),
   stylistSlug: z.string().trim().min(1).max(64),
   date: z.string().refine(isValidDateKey),
   time: z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/),

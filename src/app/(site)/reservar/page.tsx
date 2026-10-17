@@ -80,7 +80,11 @@ export default async function ReservarPage({
     <div className="mx-auto max-w-3xl px-5 py-16 md:py-24">
       <p className="u-eyebrow">Reserva</p>
       <h1 className="font-display mt-4 text-5xl md:text-6xl">Pide tu cita</h1>
-      <div className="rule-sweep mt-6 mb-10 h-px w-full bg-ink" />
+      <div className="rule-sweep mt-6 h-px w-full bg-ink" />
+      <p className="mb-10 mt-6 border border-ink bg-oat px-4 py-3 text-sm">
+        Reservas online activas: elige peluquero/a, servicio y hora, y tu cita
+        queda confirmada al instante.
+      </p>
 
       {services.length === 0 ? (
         <p className="text-cocoa">

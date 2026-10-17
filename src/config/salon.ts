@@ -120,7 +120,7 @@ export const salon = {
    * cerradas pase lo que pase con bookingClosedUntilDate. Hay que
    * volver a poner `false` a mano cuando se sepa cuándo se reabre.
    */
-  bookingClosedIndefinitely: true,
+  bookingClosedIndefinitely: false,
 
   /**
    * Cuánto se tarda como mínimo en pasar de un cliente al siguiente con el
@@ -176,6 +176,7 @@ export const salon = {
       price: 32,
       durationMin: 60,
       category: "Mujer · Color",
+      priceFrom: true,
     },
     {
       slug: "color-completo",
@@ -184,6 +185,7 @@ export const salon = {
       price: 39,
       durationMin: 60,
       category: "Mujer · Color",
+      priceFrom: true,
     },
     {
       slug: "color-sin-amoniaco",
@@ -192,6 +194,7 @@ export const salon = {
       price: 35,
       durationMin: 60,
       category: "Mujer · Color",
+      priceFrom: true,
     },
     {
       slug: "mechas-mujer",
@@ -202,6 +205,7 @@ export const salon = {
       durationMin: 120,
       category: "Mujer · Color",
       bookableOnline: false,
+      priceFrom: true,
     },
     {
       slug: "mechas-zonales",
@@ -212,6 +216,7 @@ export const salon = {
       durationMin: 90,
       category: "Mujer · Color",
       bookableOnline: false,
+      priceFrom: true,
     },
     {
       slug: "reflejos",
@@ -220,6 +225,7 @@ export const salon = {
       price: 49,
       durationMin: 75,
       category: "Mujer · Color",
+      priceFrom: true,
     },
     {
       slug: "contorno-iluminacion",
@@ -272,6 +278,7 @@ export const salon = {
       price: 49,
       durationMin: 60,
       category: "Mujer · Color",
+      priceFrom: true,
     },
 
     // ── Mujer · Corte y peinado ──────────────────────────────────────
@@ -289,9 +296,10 @@ export const salon = {
       name: "Planchar",
       description: "Extra: alisado con plancha para un acabado liso, añadido a otro servicio.",
       price: 8,
-      durationMin: 15,
+      durationMin: 30,
       category: "Mujer · Corte y peinado",
       isExtra: true,
+      priceFrom: true,
     },
     {
       slug: "peinado-mujer-corto",
@@ -300,6 +308,7 @@ export const salon = {
       price: 18,
       durationMin: 30,
       category: "Mujer · Corte y peinado",
+      priceFrom: true,
     },
     {
       slug: "peinado-mujer-medio",
@@ -308,6 +317,7 @@ export const salon = {
       price: 21,
       durationMin: 40,
       category: "Mujer · Corte y peinado",
+      priceFrom: true,
     },
     {
       slug: "peinado-mujer-largo",
@@ -316,6 +326,7 @@ export const salon = {
       price: 23,
       durationMin: 45,
       category: "Mujer · Corte y peinado",
+      priceFrom: true,
     },
     {
       slug: "cambio-corte",
@@ -330,7 +341,7 @@ export const salon = {
       name: "Flequillo",
       description: "Corte o repaso de flequillo.",
       price: 8,
-      durationMin: 15,
+      durationMin: 30,
       category: "Mujer · Corte y peinado",
     },
     {
@@ -364,14 +375,16 @@ export const salon = {
       price: 15,
       durationMin: 30,
       category: "Mujer · Cuidado capilar",
+      priceFrom: true,
     },
     {
       slug: "hidratacion-express-corto",
       name: "Hidratación express (pelo corto)",
       description: "Mascarilla exprés con masaje de cuero cabelludo para pelo corto.",
       price: 12,
-      durationMin: 20,
+      durationMin: 30,
       category: "Mujer · Cuidado capilar",
+      priceFrom: true,
     },
     {
       slug: "hidratacion-profunda-corto",
@@ -380,6 +393,7 @@ export const salon = {
       price: 25,
       durationMin: 45,
       category: "Mujer · Cuidado capilar",
+      priceFrom: true,
     },
     {
       slug: "hidratacion-profunda-largo",
@@ -388,6 +402,7 @@ export const salon = {
       price: 28,
       durationMin: 45,
       category: "Mujer · Cuidado capilar",
+      priceFrom: true,
     },
     {
       slug: "anticrespado",
@@ -434,8 +449,9 @@ export const salon = {
       name: "Arreglo de barba",
       description: "Perfilado con navaja, toalla caliente y aceite. Se puede combinar con corte.",
       price: 10,
-      durationMin: 20,
+      durationMin: 30,
       category: "Hombre",
+      priceFrom: true,
     },
     {
       slug: "color-hombre",
@@ -444,6 +460,7 @@ export const salon = {
       price: 20,
       durationMin: 60,
       category: "Hombre",
+      priceFrom: true,
     },
     {
       slug: "mechas-hombre",
@@ -454,6 +471,7 @@ export const salon = {
       durationMin: 90,
       category: "Hombre",
       bookableOnline: false,
+      priceFrom: true,
     },
 
     // ── Niños / Niñas ──────────────────────────────────────────────
@@ -478,8 +496,9 @@ export const salon = {
       name: "Lavar o peinar niñas",
       description: "Lavado y peinado para niñas, sin corte.",
       price: 15,
-      durationMin: 20,
+      durationMin: 30,
       category: "Niños",
+      priceFrom: true,
     },
   ] satisfies ServiceDef[],
 

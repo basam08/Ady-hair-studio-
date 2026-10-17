@@ -445,6 +445,7 @@ export async function rescheduleBookingByToken(
 
 export interface AdminBookingEdit {
   serviceSlug: string;
+  extraSlugs?: string[];
   stylistSlug: string;
   date: string;
   time: string;
@@ -477,13 +478,31 @@ export async function updateBookingByAdmin(
     throw new BookingError("STYLIST_NOT_FOUND", "Peluquero no disponible");
   }
 
+  const extraSlugs = [...new Set(input.extraSlugs ?? [])].filter(
+    (slug) => slug !== input.serviceSlug,
+  );
+  const extras =
+    extraSlugs.length > 0
+      ? await prisma.service.findMany({
+          where: { slug: { in: extraSlugs }, active: true, bookableOnline: true },
+        })
+      : [];
+  if (extras.length !== extraSlugs.length) {
+    throw new BookingError("SERVICE_NOT_FOUND", "Extra no disponible");
+  }
+  const totalPriceCents =
+    service.priceCents + extras.reduce((sum, e) => sum + e.priceCents, 0);
+  const totalDurationMin =
+    service.durationMin + extras.reduce((sum, e) => sum + e.durationMin, 0);
+  const combinedName = [service.name, ...extras.map((e) => e.name)].join(" + ");
+
   return saveBookingChanges(
     existing,
     {
       serviceId: service.id,
-      serviceName: service.name,
-      priceCents: service.priceCents,
-      durationMin: service.durationMin,
+      serviceName: combinedName,
+      priceCents: totalPriceCents,
+      durationMin: totalDurationMin,
       stylistId: stylist.id,
       stylistSlug: stylist.slug,
       clientNote: input.note?.trim() || null,
