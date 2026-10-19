@@ -296,10 +296,11 @@ function DayGrid({
           ))}
         </div>
       </div>
-      {stylists.map((st) => (
+      {stylists.map((st, i) => (
         <StylistColumn
           key={st.slug}
           stylist={st}
+          colorIndex={i}
           date={date}
           openMin={openMin}
           closeMin={closeMin}
@@ -315,8 +316,16 @@ function DayGrid({
   );
 }
 
+// Un color de marca por peluquero (ciclo si hubiera más de dos), para
+// diferenciar sus citas a golpe de vista sin salirse de la paleta.
+const STYLIST_COLORS = [
+  { block: "bg-ink hover:bg-cocoa", dot: "bg-ink" },
+  { block: "bg-cocoa hover:bg-ink", dot: "bg-cocoa" },
+];
+
 function StylistColumn({
   stylist,
+  colorIndex,
   date,
   openMin,
   closeMin,
@@ -328,6 +337,7 @@ function StylistColumn({
   onBookingClick,
 }: {
   stylist: { slug: string; name: string };
+  colorIndex: number;
   date: Date;
   openMin: number;
   closeMin: number;
@@ -347,9 +357,12 @@ function StylistColumn({
     onSlotClick(stylist.slug, date, formatHhMm(minutes));
   }
 
+  const color = STYLIST_COLORS[colorIndex % STYLIST_COLORS.length];
+
   return (
     <div className="flex-1 border-r border-line last:border-r-0">
-      <div className="border-b border-ink bg-cream py-1.5 text-center font-display text-sm">
+      <div className="flex items-center justify-center gap-2 border-b border-ink bg-cream py-1.5 font-display text-sm">
+        <span className={`h-2 w-2 rounded-full ${color.dot}`} />
         {stylist.name}
       </div>
       <div
@@ -377,7 +390,7 @@ function StylistColumn({
                 e.stopPropagation();
                 onBookingClick(b);
               }}
-              className="absolute left-1 right-1 cursor-pointer overflow-hidden rounded-sm border border-ink bg-ink px-1.5 py-1 text-oat hover:bg-persimmon"
+              className={`absolute left-1 right-1 cursor-pointer overflow-hidden rounded-sm border border-ink px-1.5 py-1 text-oat transition-colors ${color.block}`}
               style={{ top, height }}
               title={`Editar: ${formatTimeInZone(salon.timeZone, start)} · ${b.serviceName} · ${b.client.name}`}
             >
@@ -429,7 +442,13 @@ function WeekAgenda({
             ) : (
               <>
                 <div className="mt-2 flex flex-col gap-1">
-                  {dayBookings.map((b) => (
+                  {dayBookings.map((b) => {
+                    const colorIndex = Math.max(
+                      0,
+                      stylists.findIndex((s) => s.slug === b.stylist?.slug),
+                    );
+                    const color = STYLIST_COLORS[colorIndex % STYLIST_COLORS.length];
+                    return (
                     <button
                       key={b.id}
                       type="button"
@@ -437,14 +456,16 @@ function WeekAgenda({
                       className="border border-ink bg-cream px-1.5 py-1 text-left text-[11px] leading-tight hover:bg-oat"
                       title={`Editar: ${b.serviceName} · ${b.client.name}`}
                     >
-                      <p className="u-mono font-semibold">
+                      <p className="u-mono flex items-center gap-1.5 font-semibold">
+                        <span className={`h-1.5 w-1.5 shrink-0 rounded-full ${color.dot}`} />
                         {formatTimeInZone(salon.timeZone, new Date(b.startsAt))} ·{" "}
                         {b.stylist?.name ?? "?"}
                       </p>
                       <p className="truncate">{b.serviceName}</p>
                       <p className="truncate text-cocoa">{b.client.name}</p>
                     </button>
-                  ))}
+                    );
+                  })}
                   {dayBookings.length === 0 && (
                     <p className="mt-1 text-center text-[11px] text-cocoa">Sin citas</p>
                   )}
