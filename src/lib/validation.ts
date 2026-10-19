@@ -94,6 +94,13 @@ export const adminBookingCreateSchema = z.object({
   stylistSlug: z.string().trim().min(1).max(64),
   date: z.string().refine(isValidDateKey),
   time: z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/),
+  // Hora de fin manual (opcional): si se manda, pisa la duración del
+  // servicio para esta reserva (solo admin).
+  endTime: z
+    .string()
+    .regex(/^([01]\d|2[0-3]):[0-5]\d$/)
+    .optional()
+    .or(z.literal("")),
   name: z.string().trim().min(2).max(80),
   phone: phoneSchema,
   email: z.string().trim().email().max(120).optional().or(z.literal("")),

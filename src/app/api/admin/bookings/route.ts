@@ -62,6 +62,7 @@ export const POST = withAdmin(async (req: NextRequest) => {
         stylistSlug: parsed.data.stylistSlug,
         date: parsed.data.date,
         time: parsed.data.time,
+        endTime: parsed.data.endTime || undefined,
         name: parsed.data.name,
         phone: parsed.data.phone,
         email: parsed.data.email || undefined,

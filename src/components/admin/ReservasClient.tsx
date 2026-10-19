@@ -24,6 +24,7 @@ export interface BookingFormValues {
   stylistSlug: string;
   date: string;
   time: string;
+  endTime: string;
   name: string;
   phone: string;
   email: string;
@@ -143,6 +144,7 @@ export function ReservasClient({
               stylistSlug: stylists[0]?.slug ?? "",
               date: "",
               time: "",
+              endTime: "",
               name: "",
               phone: "",
               email: "",
@@ -363,6 +365,7 @@ export function valuesFromBooking(
   stylists: { slug: string }[],
 ): BookingFormValues {
   const d = new Date(b.startsAt);
+  const end = new Date(d.getTime() + b.durationMin * 60_000);
   return {
     serviceSlug: b.service.slug,
     // Las reservas combinadas solo guardan el servicio principal; al
@@ -371,6 +374,8 @@ export function valuesFromBooking(
     stylistSlug: b.stylist?.slug ?? stylists[0]?.slug ?? "",
     date: dateKey(d),
     time: formatTimeInZone(salon.timeZone, d),
+    // Precargada por si activan el ajuste manual; en automático no se usa.
+    endTime: formatTimeInZone(salon.timeZone, end),
     name: b.client.name,
     phone: b.client.phone,
     email: b.client.email ?? "",
@@ -404,6 +409,9 @@ export function BookingForm({
   const [busy, setBusy] = useState(false);
   const [timePickerOpen, setTimePickerOpen] = useState(false);
   const [timePickerMode, setTimePickerMode] = useState<"hour" | "minute">("hour");
+  const [manualEnd, setManualEnd] = useState(false);
+  const [endPickerOpen, setEndPickerOpen] = useState(false);
+  const [endPickerMode, setEndPickerMode] = useState<"hour" | "minute">("hour");
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
@@ -415,6 +423,7 @@ export function BookingForm({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           ...form,
+          endTime: manualEnd ? form.endTime || undefined : undefined,
           email: form.email || undefined,
           note: form.note || undefined,
         }),
@@ -543,6 +552,48 @@ export function BookingForm({
           </div>
         )}
       </label>
+      <label className="flex items-center gap-2 sm:col-span-3">
+        <input
+          type="checkbox"
+          checked={manualEnd}
+          onChange={(e) => setManualEnd(e.target.checked)}
+        />
+        <span className="u-mono text-xs uppercase tracking-widest">
+          Ajustar hora de fin a mano (si no, se usa la duración normal del servicio)
+        </span>
+      </label>
+      {manualEnd && (
+        <label className="relative block">
+          <span className="field-label">Hora de fin</span>
+          <button
+            type="button"
+            onClick={() => {
+              setEndPickerMode("hour");
+              setEndPickerOpen((v) => !v);
+            }}
+            className="field text-left"
+          >
+            {form.endTime || "Elegir hora"}
+          </button>
+          {endPickerOpen && (
+            <div className="absolute z-10 mt-1 border border-ink bg-oat p-4 shadow-lg">
+              <CircularTimePicker
+                value={form.endTime || form.time || "11:00"}
+                onChange={(endTime) => setForm({ ...form, endTime })}
+                mode={endPickerMode}
+                onModeChange={setEndPickerMode}
+              />
+              <button
+                type="button"
+                onClick={() => setEndPickerOpen(false)}
+                className="btn btn-primary mt-3 w-full"
+              >
+                Listo
+              </button>
+            </div>
+          )}
+        </label>
+      )}
       <label className="block">
         <span className="field-label">Nombre</span>
         <input

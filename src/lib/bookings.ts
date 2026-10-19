@@ -60,6 +60,9 @@ interface CreateInput {
   stylistSlug: string;
   date: string; // YYYY-MM-DD (hora local del negocio)
   time: string; // HH:MM
+  // Hora de fin manual (solo admin): si se manda, pisa la duración
+  // calculada a partir de los servicios elegidos.
+  endTime?: string;
   name: string;
   phone: string;
   email?: string;
@@ -128,12 +131,25 @@ export async function createBooking(
 
   const totalPriceCents =
     service.priceCents + extras.reduce((sum, e) => sum + e.priceCents, 0);
-  const totalDurationMin =
+  let totalDurationMin =
     service.durationMin + extras.reduce((sum, e) => sum + e.durationMin, 0);
   const combinedName = [service.name, ...extras.map((e) => e.name)].join(" + ");
 
   const [year, month, day] = input.date.split("-").map(Number);
   const [hour, minute] = input.time.split(":").map(Number);
+
+  if (opts.source === "admin" && input.endTime) {
+    const [endHour, endMinute] = input.endTime.split(":").map(Number);
+    const manualDuration = endHour * 60 + endMinute - (hour * 60 + minute);
+    if (manualDuration <= 0) {
+      throw new BookingError(
+        "OUT_OF_HOURS",
+        "La hora de fin debe ser posterior a la de inicio",
+      );
+    }
+    totalDurationMin = manualDuration;
+  }
+
   const startsAt = zonedWallTimeToUtc(
     salon.timeZone,
     year,
@@ -449,6 +465,9 @@ export interface AdminBookingEdit {
   stylistSlug: string;
   date: string;
   time: string;
+  // Hora de fin manual (opcional): si se manda, pisa la duración
+  // calculada a partir de los servicios elegidos.
+  endTime?: string;
   name: string;
   phone: string;
   email?: string;
@@ -492,9 +511,22 @@ export async function updateBookingByAdmin(
   }
   const totalPriceCents =
     service.priceCents + extras.reduce((sum, e) => sum + e.priceCents, 0);
-  const totalDurationMin =
+  let totalDurationMin =
     service.durationMin + extras.reduce((sum, e) => sum + e.durationMin, 0);
   const combinedName = [service.name, ...extras.map((e) => e.name)].join(" + ");
+
+  if (input.endTime) {
+    const [hour, minute] = input.time.split(":").map(Number);
+    const [endHour, endMinute] = input.endTime.split(":").map(Number);
+    const manualDuration = endHour * 60 + endMinute - (hour * 60 + minute);
+    if (manualDuration <= 0) {
+      throw new BookingError(
+        "OUT_OF_HOURS",
+        "La hora de fin debe ser posterior a la de inicio",
+      );
+    }
+    totalDurationMin = manualDuration;
+  }
 
   return saveBookingChanges(
     existing,

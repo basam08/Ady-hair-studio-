@@ -87,6 +87,7 @@ export function CalendarioClient({
         stylistSlug,
         date: dateKey(date),
         time,
+        endTime: "",
         name: "",
         phone: "",
         email: "",
