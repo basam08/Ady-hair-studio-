@@ -319,8 +319,8 @@ function DayGrid({
 // Un color de marca por peluquero (ciclo si hubiera más de dos), para
 // diferenciar sus citas a golpe de vista sin salirse de la paleta.
 const STYLIST_COLORS = [
-  { block: "bg-ink hover:bg-cocoa", dot: "bg-ink" },
-  { block: "bg-cocoa hover:bg-ink", dot: "bg-cocoa" },
+  { block: "bg-ink hover:bg-walnut", dot: "bg-ink" },
+  { block: "bg-walnut hover:bg-ink", dot: "bg-walnut" },
 ];
 
 function StylistColumn({

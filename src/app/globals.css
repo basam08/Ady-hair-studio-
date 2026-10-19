@@ -14,6 +14,7 @@
   --color-persimmon: #111111; /* "acento" = negro (botones sólidos) */
   --color-persimmon-dark: #000000;
   --color-sage: #dcdbd6; /* gris claro para rellenos */
+  --color-walnut: #6b4226; /* marrón — distingue a Mila en el Calendario del panel */
   --color-line: rgba(17, 17, 17, 0.15);
 
   /* Tipografía estilo plataforma de reservas (Booksy-like):
