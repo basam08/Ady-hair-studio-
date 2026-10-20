@@ -790,9 +790,8 @@ export function BookingWizard({
               />
             </label>
             <label className="block">
-              <span className="field-label">Teléfono *</span>
+              <span className="field-label">Teléfono (opcional)</span>
               <input
-                required
                 type="tel"
                 className="field"
                 value={form.phone}

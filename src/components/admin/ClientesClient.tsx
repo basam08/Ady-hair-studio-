@@ -5,7 +5,7 @@ import { useEffect, useState } from "react";
 interface ClientRow {
   id: string;
   name: string;
-  phone: string;
+  phone: string | null;
   email: string | null;
   visits: number;
   createdAt: string;
@@ -72,7 +72,7 @@ export function ClientesClient() {
                     )}
                   </td>
                   <td className="border-b border-line py-3 pr-3 u-mono text-xs text-cocoa">
-                    {c.phone}
+                    {c.phone ?? "Sin teléfono"}
                     {c.email && (
                       <>
                         <br />

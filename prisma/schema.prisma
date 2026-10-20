@@ -72,7 +72,9 @@ model Stylist {
 model Client {
   id        String    @id @default(cuid())
   name      String
-  phone     String    @unique
+  // Opcional: varios clientes sin teléfono son válidos (NULL no choca
+  // con la restricción de unicidad, a diferencia de "").
+  phone     String?   @unique
   email     String?
   notes     String?
   createdAt DateTime  @default(now())

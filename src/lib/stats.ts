@@ -25,7 +25,7 @@ export interface DashboardStats {
     time: string;
     serviceName: string;
     client: string;
-    phone: string;
+    phone: string | null;
     stylistName: string;
     status: string;
   }[];

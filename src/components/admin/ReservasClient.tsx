@@ -3,7 +3,7 @@
 import { Fragment, useCallback, useEffect, useState } from "react";
 import { salon, formatPriceCents } from "@/config/salon";
 import { formatTimeInZone } from "@/lib/time";
-import { CircularTimePicker } from "@/components/admin/CircularTimePicker";
+import { TimeListPicker } from "@/components/admin/TimeListPicker";
 
 export interface Booking {
   id: string;
@@ -13,7 +13,7 @@ export interface Booking {
   startsAt: string;
   status: string;
   clientNote: string | null;
-  client: { name: string; phone: string; email: string | null };
+  client: { name: string; phone: string | null; email: string | null };
   service: { slug: string };
   stylist: { name: string; slug: string } | null;
 }
@@ -139,7 +139,7 @@ export function ReservasClient({
             services={services}
             stylists={stylists}
             initial={{
-              serviceSlug: services[0]?.slug ?? "",
+              serviceSlug: "",
               extraSlugs: [],
               stylistSlug: stylists[0]?.slug ?? "",
               date: "",
@@ -268,7 +268,7 @@ export function ReservasClient({
                         {b.client.name}
                         <br />
                         <span className="u-mono text-xs text-cocoa">
-                          {b.client.phone}
+                          {b.client.phone ?? "Sin teléfono"}
                         </span>
                       </td>
                       <td className="border-b border-line py-3 pr-3">
@@ -377,7 +377,7 @@ export function valuesFromBooking(
     // Precargada por si activan el ajuste manual; en automático no se usa.
     endTime: formatTimeInZone(salon.timeZone, end),
     name: b.client.name,
-    phone: b.client.phone,
+    phone: b.client.phone ?? "",
     email: b.client.email ?? "",
     note: b.clientNote ?? "",
   };
@@ -408,10 +408,8 @@ export function BookingForm({
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [timePickerOpen, setTimePickerOpen] = useState(false);
-  const [timePickerMode, setTimePickerMode] = useState<"hour" | "minute">("hour");
   const [manualEnd, setManualEnd] = useState(false);
   const [endPickerOpen, setEndPickerOpen] = useState(false);
-  const [endPickerMode, setEndPickerMode] = useState<"hour" | "minute">("hour");
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
@@ -423,6 +421,9 @@ export function BookingForm({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           ...form,
+          // Una fila de "otro servicio" añadida pero sin elegir todavía
+          // se ignora en vez de bloquear el envío.
+          extraSlugs: form.extraSlugs.filter(Boolean),
           endTime: manualEnd ? form.endTime || undefined : undefined,
           email: form.email || undefined,
           note: form.note || undefined,
@@ -489,7 +490,7 @@ export function BookingForm({
             onClick={() =>
               setForm({
                 ...form,
-                extraSlugs: [...form.extraSlugs, services[0]?.slug ?? ""],
+                extraSlugs: [...form.extraSlugs, ""],
               })
             }
             className="u-mono self-start text-xs uppercase link-underline"
@@ -526,29 +527,20 @@ export function BookingForm({
         <span className="field-label">Hora</span>
         <button
           type="button"
-          onClick={() => {
-            setTimePickerMode("hour");
-            setTimePickerOpen((v) => !v);
-          }}
+          onClick={() => setTimePickerOpen((v) => !v)}
           className="field text-left"
         >
           {form.time || "Elegir hora"}
         </button>
         {timePickerOpen && (
-          <div className="absolute z-10 mt-1 border border-ink bg-oat p-4 shadow-lg">
-            <CircularTimePicker
+          <div className="absolute z-10 mt-1 shadow-lg">
+            <TimeListPicker
               value={form.time || "10:00"}
-              onChange={(time) => setForm({ ...form, time })}
-              mode={timePickerMode}
-              onModeChange={setTimePickerMode}
+              onChange={(time) => {
+                setForm({ ...form, time });
+                setTimePickerOpen(false);
+              }}
             />
-            <button
-              type="button"
-              onClick={() => setTimePickerOpen(false)}
-              className="btn btn-primary mt-3 w-full"
-            >
-              Listo
-            </button>
           </div>
         )}
       </label>
@@ -567,29 +559,20 @@ export function BookingForm({
           <span className="field-label">Hora de fin</span>
           <button
             type="button"
-            onClick={() => {
-              setEndPickerMode("hour");
-              setEndPickerOpen((v) => !v);
-            }}
+            onClick={() => setEndPickerOpen((v) => !v)}
             className="field text-left"
           >
             {form.endTime || "Elegir hora"}
           </button>
           {endPickerOpen && (
-            <div className="absolute z-10 mt-1 border border-ink bg-oat p-4 shadow-lg">
-              <CircularTimePicker
+            <div className="absolute z-10 mt-1 shadow-lg">
+              <TimeListPicker
                 value={form.endTime || form.time || "11:00"}
-                onChange={(endTime) => setForm({ ...form, endTime })}
-                mode={endPickerMode}
-                onModeChange={setEndPickerMode}
+                onChange={(endTime) => {
+                  setForm({ ...form, endTime });
+                  setEndPickerOpen(false);
+                }}
               />
-              <button
-                type="button"
-                onClick={() => setEndPickerOpen(false)}
-                className="btn btn-primary mt-3 w-full"
-              >
-                Listo
-              </button>
             </div>
           )}
         </label>
@@ -604,9 +587,8 @@ export function BookingForm({
         />
       </label>
       <label className="block">
-        <span className="field-label">Teléfono</span>
+        <span className="field-label">Teléfono (opcional)</span>
         <input
-          required
           className="field"
           value={form.phone}
           onChange={(e) => setForm({ ...form, phone: e.target.value })}

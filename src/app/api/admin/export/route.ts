@@ -54,7 +54,7 @@ export const GET = withAdmin(async (req: NextRequest) => {
       formatTimeInZone(salon.timeZone, b.startsAt),
       b.serviceName,
       b.client.name,
-      b.client.phone,
+      b.client.phone ?? "",
       b.client.email ?? "",
       (b.priceCents / 100).toFixed(2),
       b.durationMin,

@@ -16,7 +16,7 @@ interface BookingLike {
   startsAt: Date;
   endsAt: Date;
   manageToken: string;
-  client: { name: string; email: string | null; phone: string };
+  client: { name: string; email: string | null; phone: string | null };
   stylist?: { name: string } | null;
 }
 
@@ -65,10 +65,12 @@ export async function notifyBookingConfirmed(b: BookingLike): Promise<void> {
           }),
         })
       : Promise.resolve(),
-    sendWhatsApp(
-      b.client.phone,
-      `✂️ ${salon.name}: cita confirmada para ${b.serviceName} el ${fecha} a las ${hora}. Gestiona tu cita: ${link}`,
-    ),
+    b.client.phone
+      ? sendWhatsApp(
+          b.client.phone,
+          `✂️ ${salon.name}: cita confirmada para ${b.serviceName} el ${fecha} a las ${hora}. Gestiona tu cita: ${link}`,
+        )
+      : Promise.resolve(),
   ]);
 }
 
@@ -111,10 +113,12 @@ export async function notifyBookingUpdated(
           }),
         })
       : Promise.resolve(),
-    sendWhatsApp(
-      b.client.phone,
-      `✂️ ${salon.name}: tu cita ha cambiado, ahora es el ${fecha} a las ${hora}${prev ? ` (antes ${prev.fechaAnterior} ${prev.horaAnterior})` : ""}. Gestiona tu cita: ${link}`,
-    ),
+    b.client.phone
+      ? sendWhatsApp(
+          b.client.phone,
+          `✂️ ${salon.name}: tu cita ha cambiado, ahora es el ${fecha} a las ${hora}${prev ? ` (antes ${prev.fechaAnterior} ${prev.horaAnterior})` : ""}. Gestiona tu cita: ${link}`,
+        )
+      : Promise.resolve(),
   ]);
 }
 
@@ -140,7 +144,7 @@ export async function notifyBookingCancelled(b: BookingLike): Promise<void> {
           }),
         })
       : Promise.resolve(),
-    sendWhatsApp(b.client.phone, text),
+    b.client.phone ? sendWhatsApp(b.client.phone, text) : Promise.resolve(),
   ]);
 }
 
@@ -167,6 +171,6 @@ export async function notifyBookingReminder(b: BookingLike): Promise<void> {
           }),
         })
       : Promise.resolve(),
-    sendWhatsApp(b.client.phone, text),
+    b.client.phone ? sendWhatsApp(b.client.phone, text) : Promise.resolve(),
   ]);
 }

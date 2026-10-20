@@ -1,13 +1,15 @@
 import { z } from "zod";
 import { isValidDateKey } from "@/lib/time";
 
-// Teléfono: permisivo pero acotado. Acepta formato internacional o nacional.
+// Teléfono: opcional. Si se rellena, permisivo pero acotado (formato
+// internacional o nacional).
 const phoneSchema = z
   .string()
   .trim()
-  .min(6, "Teléfono demasiado corto")
   .max(20, "Teléfono demasiado largo")
-  .regex(/^\+?[0-9\s().-]{6,20}$/, "Formato de teléfono no válido");
+  .regex(/^\+?[0-9\s().-]{6,20}$/, "Formato de teléfono no válido")
+  .optional()
+  .or(z.literal(""));
 
 const extraSlugsSchema = z.array(z.string().trim().min(1).max(64)).max(10).default([]);
 
@@ -107,9 +109,14 @@ export const adminBookingCreateSchema = z.object({
   note: z.string().trim().max(500).optional().or(z.literal("")),
 });
 
-/** Normaliza el teléfono a solo dígitos (con prefijo) para usarlo como clave. */
-export function normalizePhone(raw: string): string {
-  const trimmed = raw.trim();
+/**
+ * Normaliza el teléfono a solo dígitos (con prefijo) para usarlo como
+ * clave de cliente. null si no se ha dado ninguno (no "": así varios
+ * clientes sin teléfono no chocan contra la unicidad en la BD).
+ */
+export function normalizePhone(raw: string | undefined | null): string | null {
+  const trimmed = (raw ?? "").trim();
+  if (!trimmed) return null;
   const hasPlus = trimmed.startsWith("+");
   const digits = trimmed.replace(/\D/g, "");
   return hasPlus ? `+${digits}` : digits;

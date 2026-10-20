@@ -87,7 +87,7 @@ export default async function AdminDashboard() {
                   <div>
                     <p className="text-sm">{a.serviceName}</p>
                     <p className="u-mono text-xs text-cocoa">
-                      {a.client} · {a.phone} · {a.stylistName}
+                      {a.client} · {a.phone ?? "sin teléfono"} · {a.stylistName}
                     </p>
                   </div>
                   <span

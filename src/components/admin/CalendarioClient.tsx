@@ -18,7 +18,7 @@ interface FormState {
 
 type ViewMode = "day" | "week";
 
-const ROW_PX = 24; // alto de cada franja de 15 min
+const ROW_PX = 20; // alto de cada franja de 15 min
 const SLOT_MIN = 15;
 
 function dateKey(d: Date): string {
@@ -58,6 +58,15 @@ export function CalendarioClient({
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [loading, setLoading] = useState(true);
   const [formState, setFormState] = useState<FormState | null>(null);
+  const [calMonth, setCalMonth] = useState(() => anchor);
+
+  // El mini calendario sigue al día/semana activa cuando se navega desde
+  // los controles principales (Hoy / ← / →), pero se puede hojear mes a
+  // mes por separado sin mover la vista principal.
+  useEffect(() => {
+    setCalMonth(anchor);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [dateKey(anchor)]);
 
   const weekStart = useMemo(() => startOfWeek(anchor), [anchor]);
   const rangeFrom = mode === "day" ? anchor : weekStart;
@@ -82,7 +91,7 @@ export function CalendarioClient({
     setFormState({
       mode: "create",
       values: {
-        serviceSlug: services[0]?.slug ?? "",
+        serviceSlug: "",
         extraSlugs: [],
         stylistSlug,
         date: dateKey(date),
@@ -183,24 +192,35 @@ export function CalendarioClient({
         {loading && <p className="u-mono text-xs text-cocoa">Cargando…</p>}
       </div>
 
-      <div className="mt-6">
-        {mode === "day" ? (
-          <DayGrid
-            date={anchor}
-            stylists={stylists}
-            bookings={bookings}
-            onSlotClick={openAddForm}
-            onBookingClick={openEditForm}
-          />
-        ) : (
-          <WeekAgenda
-            weekStart={weekStart}
-            stylists={stylists}
-            bookings={bookings}
-            onAdd={openAddForm}
-            onBookingClick={openEditForm}
-          />
-        )}
+      <div className="mt-6 flex flex-col gap-6 lg:flex-row lg:items-start">
+        <MiniMonthCalendar
+          monthAnchor={calMonth}
+          selected={anchor}
+          onSelectDate={(d) => {
+            setAnchor(d);
+            setMode("day");
+          }}
+          onMonthChange={setCalMonth}
+        />
+        <div className="min-w-0 flex-1 overflow-x-auto">
+          {mode === "day" ? (
+            <DayGrid
+              date={anchor}
+              stylists={stylists}
+              bookings={bookings}
+              onSlotClick={openAddForm}
+              onBookingClick={openEditForm}
+            />
+          ) : (
+            <WeekAgenda
+              weekStart={weekStart}
+              stylists={stylists}
+              bookings={bookings}
+              onAdd={openAddForm}
+              onBookingClick={openEditForm}
+            />
+          )}
+        </div>
       </div>
 
       {formState && (
@@ -241,6 +261,85 @@ export function CalendarioClient({
           </div>
         </div>
       )}
+    </div>
+  );
+}
+
+function MiniMonthCalendar({
+  monthAnchor,
+  selected,
+  onSelectDate,
+  onMonthChange,
+}: {
+  monthAnchor: Date;
+  selected: Date;
+  onSelectDate: (d: Date) => void;
+  onMonthChange: (d: Date) => void;
+}) {
+  const year = monthAnchor.getFullYear();
+  const month = monthAnchor.getMonth();
+  const firstOfMonth = new Date(year, month, 1);
+  const startOffset = (firstOfMonth.getDay() + 6) % 7; // lunes = 0
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+
+  const cells: (Date | null)[] = [];
+  for (let i = 0; i < startOffset; i++) cells.push(null);
+  for (let d = 1; d <= daysInMonth; d++) cells.push(new Date(year, month, d));
+
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  return (
+    <div className="w-full shrink-0 border border-line bg-cream p-3 lg:w-56">
+      <div className="flex items-center justify-between">
+        <button
+          type="button"
+          onClick={() => onMonthChange(new Date(year, month - 1, 1))}
+          className="u-mono px-1 text-sm"
+        >
+          ←
+        </button>
+        <p className="font-display text-sm capitalize">
+          {new Intl.DateTimeFormat("es-ES", { month: "long", year: "numeric" }).format(
+            monthAnchor,
+          )}
+        </p>
+        <button
+          type="button"
+          onClick={() => onMonthChange(new Date(year, month + 1, 1))}
+          className="u-mono px-1 text-sm"
+        >
+          →
+        </button>
+      </div>
+      <div className="mt-2 grid grid-cols-7 gap-y-1 text-center">
+        {["L", "M", "X", "J", "V", "S", "D"].map((d, i) => (
+          <span key={i} className="u-mono text-[10px] text-cocoa">
+            {d}
+          </span>
+        ))}
+        {cells.map((d, i) => {
+          if (!d) return <span key={i} />;
+          const isToday = d.getTime() === today.getTime();
+          const isSelected = dateKey(d) === dateKey(selected);
+          return (
+            <button
+              key={i}
+              type="button"
+              onClick={() => onSelectDate(d)}
+              className={`mx-auto flex h-7 w-7 items-center justify-center rounded-full text-xs transition-colors ${
+                isSelected
+                  ? "bg-ink text-oat"
+                  : isToday
+                    ? "border border-ink"
+                    : "hover:bg-oat"
+              }`}
+            >
+              {d.getDate()}
+            </button>
+          );
+        })}
+      </div>
     </div>
   );
 }

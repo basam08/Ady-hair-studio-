@@ -64,7 +64,7 @@ interface CreateInput {
   // calculada a partir de los servicios elegidos.
   endTime?: string;
   name: string;
-  phone: string;
+  phone?: string;
   email?: string;
   note?: string;
 }
@@ -190,14 +190,21 @@ export async function createBooking(
       throw new BookingError("SLOT_TAKEN", "Ese hueco ya no está disponible");
     }
 
-    const client = await tx.client.upsert({
-      where: { phone },
-      create: { name: input.name.trim(), phone, email },
-      update: {
-        name: input.name.trim(),
-        ...(email ? { email } : {}),
-      },
-    });
+    // Sin teléfono no hay clave estable para reconocer al cliente: se
+    // crea una ficha nueva cada vez (upsert con phone null chocaría con
+    // cualquier otro cliente sin teléfono, no es "el mismo").
+    const client = phone
+      ? await tx.client.upsert({
+          where: { phone },
+          create: { name: input.name.trim(), phone, email },
+          update: {
+            name: input.name.trim(),
+            ...(email ? { email } : {}),
+          },
+        })
+      : await tx.client.create({
+          data: { name: input.name.trim(), phone: null, email },
+        });
 
     return tx.booking.create({
       data: {
@@ -220,13 +227,13 @@ export async function createBooking(
 
   // Efectos secundarios fuera de la transacción (no deben bloquear la reserva).
   const full = booking as Booking & {
-    client: { name: string; email: string | null; phone: string };
+    client: { name: string; email: string | null; phone: string | null };
   };
   const fullWithStylist = { ...full, stylist: { name: stylist.name } };
 
   const eventId = await createCalendarEvent(calendarIdForStylist(stylist.slug), {
     summary: `${full.serviceName} · ${full.client.name} · ${stylist.role}: ${stylist.name}`,
-    description: `${stylist.role}: ${stylist.name}\nTel: ${full.client.phone}\n${full.clientNote ?? ""}`,
+    description: `${stylist.role}: ${stylist.name}\nTel: ${full.client.phone ?? "sin teléfono"}\n${full.clientNote ?? ""}`,
     startIso: full.startsAt.toISOString(),
     endIso: full.endsAt.toISOString(),
     timeZone: salon.timeZone,
@@ -242,7 +249,7 @@ export async function createBooking(
   await appendBookingRow([
     new Date().toLocaleString("es-ES", { timeZone: salon.timeZone }),
     full.client.name,
-    full.client.phone,
+    full.client.phone ?? "",
     full.serviceName,
     stylist.name,
     input.date,
@@ -285,11 +292,11 @@ interface BookingDraft {
   stylistId: string | null;
   stylistSlug: string | null;
   clientNote: string | null;
-  contact: { name: string; phone: string; email: string | null } | null;
+  contact: { name: string; phone: string | null; email: string | null } | null;
 }
 
 type BookingForSave = Booking & {
-  client: { name: string; email: string | null; phone: string };
+  client: { name: string; email: string | null; phone: string | null };
   stylist: { name: string; role: string; slug: string } | null;
 };
 
@@ -359,18 +366,28 @@ async function saveBookingChanges(
 
     let clientId = existing.clientId;
     if (draft.contact) {
-      const client = await tx.client.upsert({
-        where: { phone: draft.contact.phone },
-        create: {
-          name: draft.contact.name,
-          phone: draft.contact.phone,
-          email: draft.contact.email,
-        },
-        update: {
-          name: draft.contact.name,
-          ...(draft.contact.email ? { email: draft.contact.email } : {}),
-        },
-      });
+      // Igual que al crear: sin teléfono no hay clave estable, se crea
+      // una ficha nueva en vez de arriesgarse a fusionar clientes.
+      const client = draft.contact.phone
+        ? await tx.client.upsert({
+            where: { phone: draft.contact.phone },
+            create: {
+              name: draft.contact.name,
+              phone: draft.contact.phone,
+              email: draft.contact.email,
+            },
+            update: {
+              name: draft.contact.name,
+              ...(draft.contact.email ? { email: draft.contact.email } : {}),
+            },
+          })
+        : await tx.client.create({
+            data: {
+              name: draft.contact.name,
+              phone: null,
+              email: draft.contact.email,
+            },
+          });
       clientId = client.id;
     }
 
@@ -402,7 +419,7 @@ async function saveBookingChanges(
     : "Sin asignar";
   const eventId = await createCalendarEvent(calendarIdForStylist(draft.stylistSlug), {
     summary: `${updated.serviceName} · ${updated.client.name} · ${stylistLabel}`,
-    description: `${stylistLabel}\nTel: ${updated.client.phone}`,
+    description: `${stylistLabel}\nTel: ${updated.client.phone ?? "sin teléfono"}`,
     startIso: startsAt.toISOString(),
     endIso: endsAt.toISOString(),
     timeZone: salon.timeZone,
@@ -469,7 +486,7 @@ export interface AdminBookingEdit {
   // calculada a partir de los servicios elegidos.
   endTime?: string;
   name: string;
-  phone: string;
+  phone?: string;
   email?: string;
   note?: string;
 }
