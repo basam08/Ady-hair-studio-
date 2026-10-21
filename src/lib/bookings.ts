@@ -174,7 +174,13 @@ export async function createBooking(
     throw new BookingError("OUT_OF_HOURS", "Esa hora está fuera del horario de apertura");
   }
 
-  if (!(await isCalendarSlotFree(stylist.slug, startsAt, endsAt))) {
+  // El admin puede solapar citas a propósito (p. ej. tinte de raíz en
+  // reposo mientras atiende a otro cliente), como en un calendario
+  // normal. La web pública nunca debe dejar reservar un hueco ocupado.
+  if (
+    opts.source === "web" &&
+    !(await isCalendarSlotFree(stylist.slug, startsAt, endsAt))
+  ) {
     throw new BookingError(
       "SLOT_TAKEN",
       "Ese hueco ya no está disponible (ocupado en el calendario)",
@@ -185,9 +191,11 @@ export async function createBooking(
   const email = input.email?.trim() || null;
 
   const booking = await prisma.$transaction(async (tx) => {
-    const free = await isStylistSlotFree(tx as never, stylist.id, startsAt, endsAt);
-    if (!free) {
-      throw new BookingError("SLOT_TAKEN", "Ese hueco ya no está disponible");
+    if (opts.source === "web") {
+      const free = await isStylistSlotFree(tx as never, stylist.id, startsAt, endsAt);
+      if (!free) {
+        throw new BookingError("SLOT_TAKEN", "Ese hueco ya no está disponible");
+      }
     }
 
     // Sin teléfono no hay clave estable para reconocer al cliente: se
@@ -305,7 +313,7 @@ async function saveBookingChanges(
   draft: BookingDraft,
   date: string,
   time: string,
-  opts: { enforceLead: boolean },
+  opts: { enforceLead: boolean; enforceNoOverlap: boolean },
 ): Promise<Booking> {
   if (existing.status === "CANCELLED") {
     throw new BookingError("ALREADY_CANCELLED", "La reserva está cancelada");
@@ -334,7 +342,10 @@ async function saveBookingChanges(
     throw new BookingError("OUT_OF_HOURS", "Esa hora está fuera del horario de apertura");
   }
 
-  if (draft.stylistSlug) {
+  // El admin puede solapar citas a propósito (como en un calendario
+  // normal); la web pública nunca debe dejar reprogramar a un hueco ya
+  // ocupado por otra persona.
+  if (opts.enforceNoOverlap && draft.stylistSlug) {
     const calendarFree = await isCalendarSlotFree(
       draft.stylistSlug,
       startsAt,
@@ -351,17 +362,19 @@ async function saveBookingChanges(
 
   const updated = await prisma.$transaction(async (tx) => {
     // Se comprueba el hueco excluyendo la reserva actual a sí misma.
-    const free = draft.stylistId
-      ? await isStylistSlotFree(
-          tx as never,
-          draft.stylistId,
-          startsAt,
-          endsAt,
-          existing.id,
-        )
-      : await isPooledSlotFree(tx as never, startsAt, endsAt, existing.id);
-    if (!free) {
-      throw new BookingError("SLOT_TAKEN", "Ese hueco ya no está disponible");
+    if (opts.enforceNoOverlap) {
+      const free = draft.stylistId
+        ? await isStylistSlotFree(
+            tx as never,
+            draft.stylistId,
+            startsAt,
+            endsAt,
+            existing.id,
+          )
+        : await isPooledSlotFree(tx as never, startsAt, endsAt, existing.id);
+      if (!free) {
+        throw new BookingError("SLOT_TAKEN", "Ese hueco ya no está disponible");
+      }
     }
 
     let clientId = existing.clientId;
@@ -472,7 +485,7 @@ export async function rescheduleBookingByToken(
     },
     date,
     time,
-    { enforceLead: true },
+    { enforceLead: true, enforceNoOverlap: true },
   );
 }
 
@@ -563,6 +576,6 @@ export async function updateBookingByAdmin(
     },
     input.date,
     input.time,
-    { enforceLead: false },
+    { enforceLead: false, enforceNoOverlap: false },
   );
 }

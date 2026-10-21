@@ -422,6 +422,45 @@ const STYLIST_COLORS = [
   { block: "bg-walnut hover:bg-ink", dot: "bg-walnut" },
 ];
 
+interface LaidOutBooking {
+  booking: Booking;
+  col: number;
+  colCount: number;
+}
+
+// Si el admin solapa citas a propósito (p. ej. tinte en reposo mientras
+// atiende a otro cliente), las coloca una al lado de otra en vez de una
+// encima de otra, como hace Google Calendar.
+function layoutOverlaps(bookings: Booking[]): LaidOutBooking[] {
+  const sorted = [...bookings].sort(
+    (a, b) => new Date(a.startsAt).getTime() - new Date(b.startsAt).getTime(),
+  );
+  const result: LaidOutBooking[] = [];
+  let cluster: { booking: Booking; end: number; col: number }[] = [];
+  let clusterMaxEnd = -Infinity;
+
+  function flushCluster() {
+    if (cluster.length === 0) return;
+    const colCount = Math.max(...cluster.map((c) => c.col)) + 1;
+    for (const c of cluster) result.push({ booking: c.booking, col: c.col, colCount });
+    cluster = [];
+    clusterMaxEnd = -Infinity;
+  }
+
+  for (const b of sorted) {
+    const start = new Date(b.startsAt).getTime();
+    const end = start + b.durationMin * 60_000;
+    if (cluster.length > 0 && start >= clusterMaxEnd) flushCluster();
+    const occupiedCols = new Set(cluster.filter((c) => start < c.end).map((c) => c.col));
+    let col = 0;
+    while (occupiedCols.has(col)) col++;
+    cluster.push({ booking: b, end, col });
+    clusterMaxEnd = Math.max(clusterMaxEnd, end);
+  }
+  flushCluster();
+  return result;
+}
+
 function StylistColumn({
   stylist,
   colorIndex,
@@ -477,11 +516,12 @@ function StylistColumn({
             style={{ top: (m - openMin) * pxPerMin }}
           />
         ))}
-        {bookings.map((b) => {
+        {layoutOverlaps(bookings).map(({ booking: b, col, colCount }) => {
           const start = new Date(b.startsAt);
           const startMin = start.getHours() * 60 + start.getMinutes();
           const top = Math.max(0, (startMin - openMin) * pxPerMin);
           const height = Math.max(ROW_PX - 2, b.durationMin * pxPerMin - 2);
+          const widthPct = 100 / colCount;
           return (
             <div
               key={b.id}
@@ -489,8 +529,13 @@ function StylistColumn({
                 e.stopPropagation();
                 onBookingClick(b);
               }}
-              className={`absolute left-1 right-1 cursor-pointer overflow-hidden rounded-sm border border-ink px-1.5 py-1 text-oat transition-colors ${color.block}`}
-              style={{ top, height }}
+              className={`absolute cursor-pointer overflow-hidden rounded-sm border border-ink px-1.5 py-1 text-oat transition-colors ${color.block}`}
+              style={{
+                top,
+                height,
+                left: `calc(${col * widthPct}% + 2px)`,
+                width: `calc(${widthPct}% - 4px)`,
+              }}
               title={`Editar: ${formatTimeInZone(salon.timeZone, start)} · ${b.serviceName} · ${b.client.name}`}
             >
               <p className="truncate text-[11px] font-semibold leading-tight">
