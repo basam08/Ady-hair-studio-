@@ -287,7 +287,7 @@ export const salon = {
       slug: "corte-mujer",
       name: "Corte mujer",
       description:
-        "Lavado, corte personalizado y peinado. Asesoramiento de forma según tu tipo de cara y textura.",
+        "Lavado, corte personalizado. Asesoramiento de forma según tu tipo de cara y textura.",
       price: 22,
       durationMin: 30,
       category: "Mujer · Corte y peinado",

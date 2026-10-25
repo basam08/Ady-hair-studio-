@@ -430,35 +430,38 @@ interface LaidOutBooking {
 
 // Si el admin solapa citas a propósito (p. ej. tinte en reposo mientras
 // atiende a otro cliente), las coloca una al lado de otra en vez de una
-// encima de otra, como hace Google Calendar.
+// encima de otra, como hace Google Calendar. Cálculo directo por pares
+// (la lista de citas de un día para un peluquero siempre es pequeña).
 function layoutOverlaps(bookings: Booking[]): LaidOutBooking[] {
-  const sorted = [...bookings].sort(
-    (a, b) => new Date(a.startsAt).getTime() - new Date(b.startsAt).getTime(),
-  );
-  const result: LaidOutBooking[] = [];
-  let cluster: { booking: Booking; end: number; col: number }[] = [];
-  let clusterMaxEnd = -Infinity;
-
-  function flushCluster() {
-    if (cluster.length === 0) return;
-    const colCount = Math.max(...cluster.map((c) => c.col)) + 1;
-    for (const c of cluster) result.push({ booking: c.booking, col: c.col, colCount });
-    cluster = [];
-    clusterMaxEnd = -Infinity;
-  }
-
-  for (const b of sorted) {
+  const items = bookings.map((b) => {
     const start = new Date(b.startsAt).getTime();
-    const end = start + b.durationMin * 60_000;
-    if (cluster.length > 0 && start >= clusterMaxEnd) flushCluster();
-    const occupiedCols = new Set(cluster.filter((c) => start < c.end).map((c) => c.col));
-    let col = 0;
-    while (occupiedCols.has(col)) col++;
-    cluster.push({ booking: b, end, col });
-    clusterMaxEnd = Math.max(clusterMaxEnd, end);
+    return { booking: b, start, end: start + b.durationMin * 60_000 };
+  });
+
+  function overlaps(a: (typeof items)[number], b: (typeof items)[number]): boolean {
+    return a.start < b.end && b.start < a.end;
   }
-  flushCluster();
-  return result;
+
+  const sorted = [...items].sort((a, b) => a.start - b.start);
+  const colOf = new Map<(typeof items)[number], number>();
+  for (const item of sorted) {
+    const used = new Set(
+      sorted
+        .filter((other) => other !== item && colOf.has(other) && overlaps(item, other))
+        .map((other) => colOf.get(other)!),
+    );
+    let col = 0;
+    while (used.has(col)) col++;
+    colOf.set(item, col);
+  }
+
+  return items.map((item) => {
+    let colCount = 1;
+    for (const other of items) {
+      if (overlaps(item, other)) colCount = Math.max(colCount, colOf.get(other)! + 1);
+    }
+    return { booking: item.booking, col: colOf.get(item)!, colCount };
+  });
 }
 
 function StylistColumn({
