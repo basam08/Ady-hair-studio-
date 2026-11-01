@@ -806,6 +806,11 @@ export function BookingWizard({
                 value={form.email}
                 onChange={(e) => setForm({ ...form, email: e.target.value })}
               />
+              <p className="mt-1.5 text-xs text-cocoa">
+                Si nos dejas tu email (puede ser de Gmail o el que uses), te
+                mandamos la confirmación de la cita y un enlace para
+                gestionarla luego. No es obligatorio para reservar.
+              </p>
             </label>
             <label className="block sm:col-span-2">
               <span className="field-label">Nota para el peluquero (opcional)</span>
