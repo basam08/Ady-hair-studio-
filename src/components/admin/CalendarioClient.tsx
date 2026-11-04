@@ -18,7 +18,7 @@ interface FormState {
 
 type ViewMode = "day" | "week";
 
-const ROW_PX = 20; // alto de cada franja de 15 min
+const ROW_PX = 13; // alto de cada franja de 15 min
 const SLOT_MIN = 15;
 
 function dateKey(d: Date): string {
@@ -523,7 +523,7 @@ function StylistColumn({
           const start = new Date(b.startsAt);
           const startMin = start.getHours() * 60 + start.getMinutes();
           const top = Math.max(0, (startMin - openMin) * pxPerMin);
-          const height = Math.max(ROW_PX - 2, b.durationMin * pxPerMin - 2);
+          const height = Math.max(ROW_PX - 1, b.durationMin * pxPerMin - 1);
           const widthPct = 100 / colCount;
           return (
             <div
@@ -532,19 +532,19 @@ function StylistColumn({
                 e.stopPropagation();
                 onBookingClick(b);
               }}
-              className={`absolute cursor-pointer overflow-hidden rounded-sm border border-ink px-1.5 py-1 text-oat transition-colors ${color.block}`}
+              className={`absolute cursor-pointer overflow-hidden rounded-sm border border-ink px-1 py-0.5 text-oat transition-colors ${color.block}`}
               style={{
                 top,
                 height,
-                left: `calc(${col * widthPct}% + 2px)`,
-                width: `calc(${widthPct}% - 4px)`,
+                left: `calc(${col * widthPct}% + 1px)`,
+                width: `calc(${widthPct}% - 2px)`,
               }}
               title={`Editar: ${formatTimeInZone(salon.timeZone, start)} · ${b.serviceName} · ${b.client.name}`}
             >
-              <p className="truncate text-[11px] font-semibold leading-tight">
+              <p className="truncate text-[9px] font-semibold leading-tight">
                 {formatTimeInZone(salon.timeZone, start)} · {b.serviceName}
               </p>
-              <p className="truncate text-[10px] leading-tight text-oat/70">{b.client.name}</p>
+              <p className="truncate text-[8px] leading-tight text-oat/70">{b.client.name}</p>
             </div>
           );
         })}
@@ -579,7 +579,7 @@ function WeekAgenda({
         const closed = (salon.hours[weekday] ?? []).length === 0;
 
         return (
-          <div key={key} className="min-h-[14rem] bg-oat p-2">
+          <div key={key} className="min-h-[9rem] bg-oat p-2">
             <p className="u-mono text-center text-xs uppercase tracking-widest text-cocoa">
               {new Intl.DateTimeFormat("es-ES", { weekday: "short" }).format(day)}
             </p>

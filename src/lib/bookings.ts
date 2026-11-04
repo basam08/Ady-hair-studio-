@@ -170,7 +170,14 @@ export async function createBooking(
     }
   }
 
-  if (!isWithinOpeningHours(input.date, hour * 60 + minute, hour * 60 + minute + totalDurationMin)) {
+  if (
+    !isWithinOpeningHours(
+      input.date,
+      hour * 60 + minute,
+      hour * 60 + minute + totalDurationMin,
+      { allowBreaks: opts.source === "admin" },
+    )
+  ) {
     throw new BookingError("OUT_OF_HOURS", "Esa hora está fuera del horario de apertura");
   }
 
@@ -313,7 +320,7 @@ async function saveBookingChanges(
   draft: BookingDraft,
   date: string,
   time: string,
-  opts: { enforceLead: boolean; enforceNoOverlap: boolean },
+  opts: { enforceLead: boolean; enforceNoOverlap: boolean; allowBreaks: boolean },
 ): Promise<Booking> {
   if (existing.status === "CANCELLED") {
     throw new BookingError("ALREADY_CANCELLED", "La reserva está cancelada");
@@ -338,7 +345,14 @@ async function saveBookingChanges(
     }
   }
 
-  if (!isWithinOpeningHours(date, hour * 60 + minute, hour * 60 + minute + draft.durationMin)) {
+  if (
+    !isWithinOpeningHours(
+      date,
+      hour * 60 + minute,
+      hour * 60 + minute + draft.durationMin,
+      { allowBreaks: opts.allowBreaks },
+    )
+  ) {
     throw new BookingError("OUT_OF_HOURS", "Esa hora está fuera del horario de apertura");
   }
 
@@ -485,7 +499,7 @@ export async function rescheduleBookingByToken(
     },
     date,
     time,
-    { enforceLead: true, enforceNoOverlap: true },
+    { enforceLead: true, enforceNoOverlap: true, allowBreaks: false },
   );
 }
 
@@ -576,6 +590,6 @@ export async function updateBookingByAdmin(
     },
     input.date,
     input.time,
-    { enforceLead: false, enforceNoOverlap: false },
+    { enforceLead: false, enforceNoOverlap: false, allowBreaks: true },
   );
 }

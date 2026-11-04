@@ -652,11 +652,20 @@ export function isWithinOpeningHours(
   dateKeyStr: string,
   startMin: number,
   endMin: number,
+  // El panel admin puede saltarse las pausas entre bloques (p. ej. la
+  // hora de comer) sin salirse de la franja del día; la web pública no.
+  opts: { allowBreaks?: boolean } = {},
 ): boolean {
   if (salon.closedDates.includes(dateKeyStr)) return false;
   const [year, month, day] = dateKeyStr.split("-").map(Number);
   const weekday = new Date(Date.UTC(year, month - 1, day)).getUTCDay() as WeekDay;
   const blocks = salon.hours[weekday] ?? [];
+  if (blocks.length === 0) return false;
+  if (opts.allowBreaks) {
+    const dayOpen = Math.min(...blocks.map((b) => parseHhMm(b.open)));
+    const dayClose = Math.max(...blocks.map((b) => parseHhMm(b.close)));
+    return startMin >= dayOpen && endMin <= dayClose;
+  }
   return blocks.some((b) => startMin >= parseHhMm(b.open) && endMin <= parseHhMm(b.close));
 }
 

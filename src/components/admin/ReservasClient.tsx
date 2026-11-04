@@ -630,6 +630,16 @@ export function BookingForm({
   );
 }
 
+// Prioriza coincidencias al principio del nombre o de una palabra (p. ej.
+// "Corte de hombre" para "c" o "corte") por encima de las que solo
+// coinciden en medio de la palabra.
+function matchRank(name: string, q: string): number {
+  const lower = name.toLowerCase();
+  if (lower.startsWith(q)) return 0;
+  if (lower.split(/\s+/).some((word) => word.startsWith(q))) return 1;
+  return 2;
+}
+
 function ServiceCombobox({
   services,
   value,
@@ -650,7 +660,9 @@ function ServiceCombobox({
 
   const q = query.trim().toLowerCase();
   const filtered = q
-    ? services.filter((s) => s.name.toLowerCase().includes(q))
+    ? services
+        .filter((s) => s.name.toLowerCase().includes(q))
+        .sort((a, b) => matchRank(a.name, q) - matchRank(b.name, q))
     : services;
 
   return (
