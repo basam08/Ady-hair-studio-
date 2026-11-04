@@ -640,6 +640,12 @@ function matchRank(name: string, q: string): number {
   return 2;
 }
 
+// Sin nada escrito todavía: los cortes son lo más reservado, así que
+// van primero en vez del orden del catálogo (que empieza por color).
+function defaultRank(name: string): number {
+  return name.toLowerCase().startsWith("corte") ? 0 : 1;
+}
+
 function ServiceCombobox({
   services,
   value,
@@ -663,7 +669,7 @@ function ServiceCombobox({
     ? services
         .filter((s) => s.name.toLowerCase().includes(q))
         .sort((a, b) => matchRank(a.name, q) - matchRank(b.name, q))
-    : services;
+    : [...services].sort((a, b) => defaultRank(a.name) - defaultRank(b.name));
 
   return (
     <div className="relative">
