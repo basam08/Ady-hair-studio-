@@ -102,16 +102,21 @@ export async function createBooking(
 
   // "extraSlugs" cubre tanto extras de verdad (isExtra, p. ej. Planchar)
   // como otros servicios completos añadidos a la misma reserva (un
-  // cliente puede reservar más de un servicio de una vez). Se exige
-  // bookableOnline para que nadie cuele un servicio de solo-WhatsApp
-  // (mechas, etc.) por esta vía.
+  // cliente puede reservar más de un servicio de una vez). Desde la web
+  // se exige bookableOnline para que nadie cuele un servicio de
+  // solo-WhatsApp (mechas, etc.); el admin puede añadir cualquier
+  // servicio activo, es él quien decide.
   const extraSlugs = [...new Set(input.extraSlugs ?? [])].filter(
     (slug) => slug !== input.serviceSlug,
   );
   const extras =
     extraSlugs.length > 0
       ? await prisma.service.findMany({
-          where: { slug: { in: extraSlugs }, active: true, bookableOnline: true },
+          where: {
+            slug: { in: extraSlugs },
+            active: true,
+            ...(opts.source === "web" ? { bookableOnline: true } : {}),
+          },
         })
       : [];
   if (extras.length !== extraSlugs.length) {
@@ -541,13 +546,15 @@ export async function updateBookingByAdmin(
     throw new BookingError("STYLIST_NOT_FOUND", "Peluquero no disponible");
   }
 
+  // Edición siempre viene del admin: cualquier servicio activo vale
+  // como extra, sin exigir bookableOnline.
   const extraSlugs = [...new Set(input.extraSlugs ?? [])].filter(
     (slug) => slug !== input.serviceSlug,
   );
   const extras =
     extraSlugs.length > 0
       ? await prisma.service.findMany({
-          where: { slug: { in: extraSlugs }, active: true, bookableOnline: true },
+          where: { slug: { in: extraSlugs }, active: true },
         })
       : [];
   if (extras.length !== extraSlugs.length) {
