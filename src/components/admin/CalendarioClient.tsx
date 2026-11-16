@@ -493,8 +493,10 @@ function StylistColumn({
     const rect = e.currentTarget.getBoundingClientRect();
     const offsetY = e.clientY - rect.top;
     let minutes = openMin + offsetY / pxPerMin;
-    minutes = Math.round(minutes / SLOT_MIN) * SLOT_MIN;
-    minutes = Math.min(Math.max(minutes, openMin), closeMin - SLOT_MIN);
+    // Redondea a la hora en punto más cercana (más fácil de ajustar a
+    // mano después) en vez de a los 15 min más cercanos.
+    minutes = Math.round(minutes / 60) * 60;
+    minutes = Math.min(Math.max(minutes, openMin), closeMin);
     onSlotClick(stylist.slug, date, formatHhMm(minutes));
   }
 
