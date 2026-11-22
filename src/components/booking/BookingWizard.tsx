@@ -28,6 +28,20 @@ interface StylistItem {
   role: string;
 }
 
+type GenderKey = "mujer" | "hombre" | "nino";
+
+interface GenderDef {
+  key: GenderKey;
+  label: string;
+  matches: (category: string) => boolean;
+}
+
+const GENDERS: GenderDef[] = [
+  { key: "mujer", label: "Mujer", matches: (c) => c.startsWith("Mujer") },
+  { key: "hombre", label: "Hombre", matches: (c) => c === "Hombre" },
+  { key: "nino", label: "Niño/a", matches: (c) => c === "Niños" },
+];
+
 interface Slot {
   time: string;
   startsAt: string;
@@ -58,7 +72,7 @@ function priceLabel(item: { priceCents: number; priceFrom: boolean }): string {
   return `${item.priceFrom ? "Desde " : ""}${formatPriceCents(item.priceCents)}`;
 }
 
-const STEP_LABELS = ["Peluquero", "Servicios", "Extras", "Fecha", "Hora", "Datos"];
+const STEP_LABELS = ["Género", "Peluquero", "Servicios", "Extras", "Fecha", "Hora", "Datos"];
 
 export function BookingWizard({
   services,
@@ -78,12 +92,22 @@ export function BookingWizard({
     [services],
   );
 
-  const [step, setStep] = useState(1);
+  const initialService = useMemo(
+    () =>
+      initialServiceSlug
+        ? primaryServices.find((s) => s.slug === initialServiceSlug) ?? null
+        : null,
+    [primaryServices, initialServiceSlug],
+  );
+  const initialGender = initialService
+    ? GENDERS.find((g) => g.matches(initialService.category))?.key ?? null
+    : null;
+
+  const [step, setStep] = useState(initialGender ? 2 : 1);
+  const [gender, setGender] = useState<GenderKey | null>(initialGender);
   const [stylistSlug, setStylistSlug] = useState<string | null>(null);
   const [selectedServiceSlugs, setSelectedServiceSlugs] = useState<string[]>(
-    initialServiceSlug && primaryServices.some((s) => s.slug === initialServiceSlug)
-      ? [initialServiceSlug]
-      : [],
+    initialService ? [initialService.slug] : [],
   );
   const [selectedExtras, setSelectedExtras] = useState<string[]>([]);
   const [whatsAppService, setWhatsAppService] = useState<ServiceItem | null>(
@@ -110,6 +134,24 @@ export function BookingWizard({
     stylistName: string;
   } | null>(null);
 
+  const genderDef = useMemo(
+    () => GENDERS.find((g) => g.key === gender) ?? null,
+    [gender],
+  );
+  const genderServices = useMemo(
+    () => (genderDef ? primaryServices.filter((s) => genderDef.matches(s.category)) : []),
+    [primaryServices, genderDef],
+  );
+  const eligibleStylists = useMemo(
+    () =>
+      genderDef
+        ? stylists.filter((st) =>
+            genderServices.some((s) => canStylistPerform(st.slug, s)),
+          )
+        : [],
+    [stylists, genderDef, genderServices],
+  );
+
   const stylist = useMemo(
     () => stylists.find((s) => s.slug === stylistSlug) ?? null,
     [stylists, stylistSlug],
@@ -124,10 +166,12 @@ export function BookingWizard({
   );
   const eligibleExtras = useMemo(
     () =>
-      stylistSlug
-        ? extraServices.filter((e) => canStylistPerform(stylistSlug, e))
+      stylistSlug && genderDef
+        ? extraServices.filter(
+            (e) => genderDef.matches(e.category) && canStylistPerform(stylistSlug, e),
+          )
         : [],
-    [extraServices, stylistSlug],
+    [extraServices, stylistSlug, genderDef],
   );
   const allItems = useMemo(
     () => [...selectedServices, ...extras],
@@ -153,13 +197,13 @@ export function BookingWizard({
 
   const grouped = useMemo(() => {
     const map = new Map<string, ServiceItem[]>();
-    for (const s of primaryServices) {
+    for (const s of genderServices) {
       const arr = map.get(s.category) ?? [];
       arr.push(s);
       map.set(s.category, arr);
     }
     return [...map.entries()];
-  }, [primaryServices]);
+  }, [genderServices]);
 
   // Calendario
   const today = useMemo(() => {
@@ -224,6 +268,17 @@ export function BookingWizard({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [primarySlug, stylistSlug, selectedDate, restKey]);
 
+  function chooseGender(g: GenderKey) {
+    if (g !== gender) {
+      setStylistSlug(null);
+      setSelectedServiceSlugs([]);
+      setSelectedExtras([]);
+    }
+    setGender(g);
+    setSlot(null);
+    setStep(2);
+  }
+
   function chooseStylist(s: StylistItem) {
     if (s.slug !== stylistSlug) {
       setSelectedServiceSlugs([]);
@@ -231,7 +286,7 @@ export function BookingWizard({
     }
     setStylistSlug(s.slug);
     setSlot(null);
-    setStep(2);
+    setStep(3);
   }
 
   function toggleService(s: ServiceItem) {
@@ -249,7 +304,7 @@ export function BookingWizard({
   }
 
   function goAfterServices() {
-    setStep(eligibleExtras.length > 0 ? 3 : 4);
+    setStep(eligibleExtras.length > 0 ? 4 : 5);
   }
 
   function toggleExtra(slug: string) {
@@ -284,7 +339,7 @@ export function BookingWizard({
       if (!res.ok) {
         setError(data?.error?.message ?? "No se pudo completar la reserva.");
         if (data?.error?.code === "SLOT_TAKEN") {
-          setStep(5);
+          setStep(6);
           setSelectedDate((d) => d); // fuerza recarga de huecos
         }
         return;
@@ -341,7 +396,7 @@ export function BookingWizard({
   return (
     <div>
       {/* Pasos */}
-      <ol className="mb-10 grid grid-cols-3 gap-px border border-line bg-line sm:grid-cols-6">
+      <ol className="mb-10 grid grid-cols-4 gap-px border border-line bg-line sm:grid-cols-7">
         {STEP_LABELS.map((label, i) => {
           const n = i + 1;
           const active = step === n;
@@ -379,20 +434,48 @@ export function BookingWizard({
         </div>
       )}
 
-      {/* Paso 1: peluquero */}
+      {/* Paso 1: género */}
       {step === 1 && (
         <div>
           <p className="mb-6 max-w-lg text-sm text-cocoa">
-            Elige primero con quién quieres tu cita. Cada peluquero tiene
+            Para empezar, dinos para quién es la cita. Así solo te
+            mostraremos los servicios y peluqueros que correspondan.
+          </p>
+          <div className="mx-auto grid max-w-md gap-px border border-line bg-line sm:grid-cols-3">
+            {GENDERS.map((g) => {
+              const active = gender === g.key;
+              return (
+                <button
+                  key={g.key}
+                  type="button"
+                  onClick={() => chooseGender(g.key)}
+                  className={`p-5 text-left transition-colors ${
+                    active ? "bg-ink text-oat" : "bg-oat hover:bg-cream"
+                  }`}
+                >
+                  <span className="font-display text-xl">{g.label}</span>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* Paso 2: peluquero */}
+      {step === 2 && genderDef && (
+        <div>
+          <SelectedGender label={genderDef.label} onChange={() => setStep(1)} />
+          <p className="mt-6 mb-6 max-w-lg text-sm text-cocoa">
+            Elige ahora con quién quieres tu cita. Cada peluquero tiene
             servicios distintos, y te lo indicaremos si eliges algo que no
             hace él o ella.
           </p>
           <div
             className={`mx-auto grid gap-px border border-line bg-line ${
-              stylists.length <= 2 ? "max-w-md sm:grid-cols-2" : "sm:grid-cols-3"
+              eligibleStylists.length <= 2 ? "max-w-md sm:grid-cols-2" : "sm:grid-cols-3"
             }`}
           >
-            {stylists.map((s) => {
+            {eligibleStylists.map((s) => {
               const active = stylistSlug === s.slug;
               return (
                 <button
@@ -414,10 +497,11 @@ export function BookingWizard({
         </div>
       )}
 
-      {/* Paso 2: servicios (se puede elegir más de uno) */}
-      {step === 2 && stylist && (
+      {/* Paso 3: servicios (se puede elegir más de uno) */}
+      {step === 3 && genderDef && stylist && (
         <div>
-          <SelectedStylist stylist={stylist} onChange={() => setStep(1)} />
+          <SelectedGender label={genderDef.label} onChange={() => setStep(1)} />
+          <SelectedStylist stylist={stylist} onChange={() => setStep(2)} />
           <p className="mt-6 mb-6 max-w-lg text-sm text-cocoa">
             Puedes elegir más de un servicio para la misma cita — se
             reservan juntos, uno detrás de otro.
@@ -527,15 +611,16 @@ export function BookingWizard({
         </div>
       )}
 
-      {/* Paso 3: extras opcionales */}
-      {step === 3 && stylist && selectedServices.length > 0 && (
+      {/* Paso 4: extras opcionales */}
+      {step === 4 && genderDef && stylist && selectedServices.length > 0 && (
         <div>
-          <SelectedStylist stylist={stylist} onChange={() => setStep(1)} />
+          <SelectedGender label={genderDef.label} onChange={() => setStep(1)} />
+          <SelectedStylist stylist={stylist} onChange={() => setStep(2)} />
           <SelectedService
             name={servicesLabel}
             priceCents={selectedServices.reduce((s, i) => s + i.priceCents, 0)}
             durationMin={selectedServices.reduce((s, i) => s + i.durationMin, 0)}
-            onChange={() => setStep(2)}
+            onChange={() => setStep(3)}
           />
           <fieldset className="mt-6">
             <legend className="u-eyebrow mb-3">
@@ -586,7 +671,7 @@ export function BookingWizard({
               <button
                 type="button"
                 className="btn btn-primary"
-                onClick={() => setStep(4)}
+                onClick={() => setStep(5)}
               >
                 Continuar →
               </button>
@@ -595,22 +680,23 @@ export function BookingWizard({
           <button
             type="button"
             className="btn btn-ghost mt-8"
-            onClick={() => setStep(2)}
+            onClick={() => setStep(3)}
           >
             ← Cambiar servicios
           </button>
         </div>
       )}
 
-      {/* Paso 4: fecha */}
-      {step === 4 && stylist && selectedServices.length > 0 && (
+      {/* Paso 5: fecha */}
+      {step === 5 && genderDef && stylist && selectedServices.length > 0 && (
         <div>
-          <SelectedStylist stylist={stylist} onChange={() => setStep(1)} />
+          <SelectedGender label={genderDef.label} onChange={() => setStep(1)} />
+          <SelectedStylist stylist={stylist} onChange={() => setStep(2)} />
           <SelectedService
             name={combinedName}
             priceCents={totalPriceCents}
             durationMin={totalDurationMin}
-            onChange={() => setStep(2)}
+            onChange={() => setStep(3)}
           />
           <div className="mt-6 max-w-sm">
             <div className="flex items-center justify-between">
@@ -670,7 +756,7 @@ export function BookingWizard({
                     disabled={!selectable}
                     onClick={() => {
                       setSelectedDate(key);
-                      setStep(5);
+                      setStep(6);
                     }}
                     className={`aspect-square u-mono text-sm transition-colors ${
                       isSelected
@@ -689,22 +775,23 @@ export function BookingWizard({
           <button
             type="button"
             className="btn btn-ghost mt-8"
-            onClick={() => setStep(eligibleExtras.length > 0 ? 3 : 2)}
+            onClick={() => setStep(eligibleExtras.length > 0 ? 4 : 3)}
           >
             ← Volver
           </button>
         </div>
       )}
 
-      {/* Paso 5: hora */}
-      {step === 5 && stylist && selectedServices.length > 0 && selectedDate && (
+      {/* Paso 6: hora */}
+      {step === 6 && genderDef && stylist && selectedServices.length > 0 && selectedDate && (
         <div>
-          <SelectedStylist stylist={stylist} onChange={() => setStep(1)} />
+          <SelectedGender label={genderDef.label} onChange={() => setStep(1)} />
+          <SelectedStylist stylist={stylist} onChange={() => setStep(2)} />
           <SelectedService
             name={combinedName}
             priceCents={totalPriceCents}
             durationMin={totalDurationMin}
-            onChange={() => setStep(2)}
+            onChange={() => setStep(3)}
           />
           <p className="u-mono mt-4 text-sm">
             {new Date(selectedDate + "T12:00:00").toLocaleDateString("es-ES", {
@@ -729,7 +816,7 @@ export function BookingWizard({
                   type="button"
                   onClick={() => {
                     setSlot(s);
-                    setStep(6);
+                    setStep(7);
                   }}
                   className={`u-mono border border-line py-2 text-sm transition-colors hover:bg-ink hover:text-oat ${
                     slot?.startsAt === s.startsAt
@@ -746,15 +833,15 @@ export function BookingWizard({
           <button
             type="button"
             className="btn btn-ghost mt-8"
-            onClick={() => setStep(4)}
+            onClick={() => setStep(5)}
           >
             ← Cambiar fecha
           </button>
         </div>
       )}
 
-      {/* Paso 6: datos */}
-      {step === 6 && stylist && selectedServices.length > 0 && selectedDate && slot && (
+      {/* Paso 7: datos */}
+      {step === 7 && stylist && selectedServices.length > 0 && selectedDate && slot && (
         <form
           onSubmit={(e) => {
             e.preventDefault();
@@ -854,13 +941,34 @@ export function BookingWizard({
             <button
               type="button"
               className="btn btn-ghost"
-              onClick={() => setStep(5)}
+              onClick={() => setStep(6)}
             >
               ← Cambiar hora
             </button>
           </div>
         </form>
       )}
+    </div>
+  );
+}
+
+function SelectedGender({
+  label,
+  onChange,
+}: {
+  label: string;
+  onChange: () => void;
+}) {
+  return (
+    <div className="flex items-center justify-between border border-line bg-cream px-4 py-3">
+      <span className="u-mono text-sm">Para: {label}</span>
+      <button
+        type="button"
+        onClick={onChange}
+        className="u-mono text-xs uppercase tracking-widest link-underline"
+      >
+        Cambiar
+      </button>
     </div>
   );
 }
