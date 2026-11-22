@@ -34,12 +34,68 @@ interface GenderDef {
   key: GenderKey;
   label: string;
   matches: (category: string) => boolean;
+  icon: React.ReactNode;
+}
+
+function VenusIcon() {
+  return (
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden>
+      <circle cx="12" cy="8" r="5" stroke="currentColor" strokeWidth="1.5" />
+      <line x1="12" y1="13" x2="12" y2="20" stroke="currentColor" strokeWidth="1.5" />
+      <line x1="8.5" y1="17" x2="15.5" y2="17" stroke="currentColor" strokeWidth="1.5" />
+    </svg>
+  );
+}
+
+function MarsIcon() {
+  return (
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden>
+      <circle cx="9" cy="15" r="5" stroke="currentColor" strokeWidth="1.5" />
+      <line x1="12.5" y1="11.5" x2="19" y2="5" stroke="currentColor" strokeWidth="1.5" />
+      <polyline
+        points="13,5 19,5 19,11"
+        stroke="currentColor"
+        strokeWidth="1.5"
+        fill="none"
+      />
+    </svg>
+  );
+}
+
+function ChildIcon() {
+  return (
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden>
+      <circle cx="12" cy="7" r="3.5" stroke="currentColor" strokeWidth="1.5" />
+      <path
+        d="M6.5 20c0-4.5 2.5-7.5 5.5-7.5s5.5 3 5.5 7.5"
+        stroke="currentColor"
+        strokeWidth="1.5"
+        fill="none"
+        strokeLinecap="round"
+      />
+    </svg>
+  );
 }
 
 const GENDERS: GenderDef[] = [
-  { key: "mujer", label: "Mujer", matches: (c) => c.startsWith("Mujer") },
-  { key: "hombre", label: "Hombre", matches: (c) => c === "Hombre" },
-  { key: "nino", label: "Niño/a", matches: (c) => c === "Niños" },
+  {
+    key: "mujer",
+    label: "Mujer",
+    matches: (c) => c.startsWith("Mujer"),
+    icon: <VenusIcon />,
+  },
+  {
+    key: "hombre",
+    label: "Hombre",
+    matches: (c) => c === "Hombre",
+    icon: <MarsIcon />,
+  },
+  {
+    key: "nino",
+    label: "Niño/a",
+    matches: (c) => c === "Niños",
+    icon: <ChildIcon />,
+  },
 ];
 
 interface Slot {
@@ -449,10 +505,11 @@ export function BookingWizard({
                   key={g.key}
                   type="button"
                   onClick={() => chooseGender(g.key)}
-                  className={`p-5 text-left transition-colors ${
+                  className={`flex items-center gap-3 p-5 text-left transition-colors ${
                     active ? "bg-ink text-oat" : "bg-oat hover:bg-cream"
                   }`}
                 >
+                  {g.icon}
                   <span className="font-display text-xl">{g.label}</span>
                 </button>
               );
@@ -464,7 +521,7 @@ export function BookingWizard({
       {/* Paso 2: peluquero */}
       {step === 2 && genderDef && (
         <div>
-          <SelectedGender label={genderDef.label} onChange={() => setStep(1)} />
+          <SelectedGender label={genderDef.label} icon={genderDef.icon} onChange={() => setStep(1)} />
           <p className="mt-6 mb-6 max-w-lg text-sm text-cocoa">
             Elige ahora con quién quieres tu cita. Cada peluquero tiene
             servicios distintos, y te lo indicaremos si eliges algo que no
@@ -500,7 +557,7 @@ export function BookingWizard({
       {/* Paso 3: servicios (se puede elegir más de uno) */}
       {step === 3 && genderDef && stylist && (
         <div>
-          <SelectedGender label={genderDef.label} onChange={() => setStep(1)} />
+          <SelectedGender label={genderDef.label} icon={genderDef.icon} onChange={() => setStep(1)} />
           <SelectedStylist stylist={stylist} onChange={() => setStep(2)} />
           <p className="mt-6 mb-6 max-w-lg text-sm text-cocoa">
             Puedes elegir más de un servicio para la misma cita — se
@@ -614,7 +671,7 @@ export function BookingWizard({
       {/* Paso 4: extras opcionales */}
       {step === 4 && genderDef && stylist && selectedServices.length > 0 && (
         <div>
-          <SelectedGender label={genderDef.label} onChange={() => setStep(1)} />
+          <SelectedGender label={genderDef.label} icon={genderDef.icon} onChange={() => setStep(1)} />
           <SelectedStylist stylist={stylist} onChange={() => setStep(2)} />
           <SelectedService
             name={servicesLabel}
@@ -690,7 +747,7 @@ export function BookingWizard({
       {/* Paso 5: fecha */}
       {step === 5 && genderDef && stylist && selectedServices.length > 0 && (
         <div>
-          <SelectedGender label={genderDef.label} onChange={() => setStep(1)} />
+          <SelectedGender label={genderDef.label} icon={genderDef.icon} onChange={() => setStep(1)} />
           <SelectedStylist stylist={stylist} onChange={() => setStep(2)} />
           <SelectedService
             name={combinedName}
@@ -785,7 +842,7 @@ export function BookingWizard({
       {/* Paso 6: hora */}
       {step === 6 && genderDef && stylist && selectedServices.length > 0 && selectedDate && (
         <div>
-          <SelectedGender label={genderDef.label} onChange={() => setStep(1)} />
+          <SelectedGender label={genderDef.label} icon={genderDef.icon} onChange={() => setStep(1)} />
           <SelectedStylist stylist={stylist} onChange={() => setStep(2)} />
           <SelectedService
             name={combinedName}
@@ -954,14 +1011,19 @@ export function BookingWizard({
 
 function SelectedGender({
   label,
+  icon,
   onChange,
 }: {
   label: string;
+  icon: React.ReactNode;
   onChange: () => void;
 }) {
   return (
     <div className="flex items-center justify-between border border-line bg-cream px-4 py-3">
-      <span className="u-mono text-sm">Para: {label}</span>
+      <span className="flex items-center gap-2 u-mono text-sm">
+        {icon}
+        Para: {label}
+      </span>
       <button
         type="button"
         onClick={onChange}
