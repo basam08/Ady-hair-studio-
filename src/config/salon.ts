@@ -102,7 +102,7 @@ export const salon = {
    * los demás.
    */
   stylists: [
-    { slug: "ady", name: "Ady", role: "Propietario del salón" },
+    { slug: "ady", name: "Ady", role: "Peluquero" },
     { slug: "mila", name: "Mila", role: "Peluquero" },
   ] satisfies StylistDef[],
 
