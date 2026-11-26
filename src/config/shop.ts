@@ -8,72 +8,21 @@
 // · Las descripciones resumen las fichas de cada producto en k89.es, sin
 //   promesas de resultados ni afirmaciones de salud añadidas.
 
-export const SHOP_SECTIONS = [
-  {
-    id: "packs-sweet-care",
-    menu: "Packs",
-    title: "Packs Sweet Care",
-    intro: "Combinaciones de cuidado del cabello a precio de pack.",
-  },
-  {
-    id: "packs-scalp-care",
-    menu: "Packs cuero cabelludo",
-    title: "Packs Scalp Care",
-    intro: "Champú, mascarilla y loción para el cuero cabelludo.",
-  },
-  {
-    id: "hidratacion",
-    menu: "Hidratación",
-    title: "Hidratación",
-    intro:
-      "Línea Moisturizing, con aceite de pepita de uva y ácido hialurónico.",
-  },
-  {
-    id: "reparacion",
-    menu: "Reparación",
-    title: "Reparación",
-    intro:
-      "Línea Repair, con el complejo de proteínas Keravis, para cabello dañado.",
-  },
-  {
-    id: "restauracion",
-    menu: "Restauración",
-    title: "Restauración",
-    intro: "Línea Restore, con queratina hidrolizada y proteínas de seda.",
-  },
-  {
-    id: "volumen",
-    menu: "Volumen",
-    title: "Volumen",
-    intro: "Línea Volume, con SymControl Scalp, para cabello fino.",
-  },
-  {
-    id: "rubios",
-    menu: "Rubios y canas",
-    title: "Rubios y canas",
-    intro: "Línea Silver, con pigmentos violetas.",
-  },
-  {
-    id: "color-y-brillo",
-    menu: "Color y brillo",
-    title: "Color y brillo",
-    intro: "Líneas Colour y Glow.",
-  },
-  {
-    id: "cuero-cabelludo",
-    menu: "Cuero cabelludo",
-    title: "Cuero cabelludo",
-    intro: "Línea Scalp Care: caspa, sensibilidad y equilibrio.",
-  },
-  {
-    id: "rizos",
-    menu: "Rizos",
-    title: "Rizos",
-    intro: "Método Curly.",
-  },
-] as const;
+/** Línea o familia de cada producto. */
+export const SECTION_TITLES = {
+  "packs-sweet-care": "Packs Sweet Care",
+  "packs-scalp-care": "Packs Scalp Care",
+  hidratacion: "Hidratación",
+  reparacion: "Reparación",
+  restauracion: "Restauración",
+  volumen: "Volumen",
+  rubios: "Rubios y canas",
+  "color-y-brillo": "Color y brillo",
+  "cuero-cabelludo": "Cuero cabelludo",
+  rizos: "Rizos",
+} as const;
 
-export type ShopSectionId = (typeof SHOP_SECTIONS)[number]["id"];
+export type ShopSectionId = keyof typeof SECTION_TITLES;
 
 export interface ShopProduct {
   slug: string;
@@ -83,7 +32,6 @@ export interface ShopProduct {
   /** Nombre que pone en la etiqueta y tamaño. */
   label?: string;
   description: string;
-  howTo?: string;
   /** Lo que incluye un pack. */
   contents?: string[];
   priceCents: number | null;
@@ -258,19 +206,6 @@ const packs: ShopProduct[] = [
   ),
 ];
 
-// Cómo se usa: textos que se repiten en varios productos.
-const LATHER =
-  "Aplica sobre el pelo mojado, masajea hasta hacer espuma y aclara bien.";
-const MASK_10 =
-  "Con el pelo lavado y húmedo, deja actuar 10 minutos y aclara bien.";
-const SERUM =
-  "Con el pelo húmedo o seco, reparte una pequeña cantidad de medios a puntas.";
-const SCALP_SHAMPOO =
-  "Aplica sobre el cuero cabelludo mojado, masajea y aclara bien. Repite si hace falta.";
-const SCALP_MASK =
-  "Aplica en el cuero cabelludo y el cabello mojado (el cuero cabelludo puede estar seco). Deja actuar 15 minutos y aclara. Lava si hace falta.";
-const SCALP_LOTION = "Aplica sobre el cuero cabelludo limpio. No se aclara.";
-
 /** Producto suelto. `file` es el nombre de la foto en public/productos/. */
 function single(
   section: ShopSectionId,
@@ -278,7 +213,6 @@ function single(
   name: string,
   label: string,
   description: string,
-  howTo: string,
 ): ShopProduct {
   return {
     slug: file,
@@ -286,7 +220,6 @@ function single(
     name,
     label,
     description,
-    howTo,
     // Pendiente de que el salón confirme el precio de cada producto.
     priceCents: null,
     image: `/productos/${file}.jpg`,
@@ -300,7 +233,6 @@ const singles: ShopProduct[] = [
     "Champú hidratante",
     "Moisturizing Shampoo · 330 ml",
     "Para cabello seco, encrespado o sin brillo. También para pelo rizado u ondulado.",
-    LATHER,
   ),
   single(
     "hidratacion",
@@ -308,7 +240,6 @@ const singles: ShopProduct[] = [
     "Acondicionador hidratante",
     "Moisturizing Conditioner · 330 ml",
     "Hidrata y facilita el peinado. Para cabello seco, encrespado o sin brillo.",
-    "De medios a puntas con el pelo mojado. Deja actuar 2 minutos y aclara bien.",
   ),
   single(
     "hidratacion",
@@ -316,7 +247,6 @@ const singles: ShopProduct[] = [
     "Mascarilla hidratante",
     "Moisturizing Mask · 300 ml",
     "Hidratación para cabello seco o encrespado. También para pelo rizado u ondulado.",
-    "De medios a puntas con el pelo mojado. Deja actuar 10 minutos y aclara bien.",
   ),
   single(
     "hidratacion",
@@ -324,7 +254,6 @@ const singles: ShopProduct[] = [
     "Sérum hidratante",
     "Moisturizing Serum · 100 ml",
     "Para cabello seco, deshidratado, encrespado o sin brillo.",
-    SERUM,
   ),
 
   single(
@@ -333,7 +262,6 @@ const singles: ShopProduct[] = [
     "Champú reparador",
     "Repair Shampoo · 330 ml",
     "Para cabello castigado, quebradizo, decolorado o con mechas.",
-    LATHER,
   ),
   single(
     "reparacion",
@@ -341,7 +269,6 @@ const singles: ShopProduct[] = [
     "Mascarilla reparadora",
     "Repair Mask · 300 ml",
     "Nutre el cabello dañado por tratamientos químicos o por el calor.",
-    MASK_10,
   ),
   single(
     "reparacion",
@@ -349,7 +276,6 @@ const singles: ShopProduct[] = [
     "Sérum reparador",
     "Repair Serum · 100 ml",
     "Para cabello estropeado, decolorado o con mechas.",
-    SERUM,
   ),
   single(
     "reparacion",
@@ -357,7 +283,6 @@ const singles: ShopProduct[] = [
     "Tratamiento reparador en spray",
     "Treatment 10 Benefits · 250 ml",
     "Sin aclarado y sin aportar peso, para cabello dañado.",
-    "Agita, pulveriza sobre el pelo húmedo y peina.",
   ),
 
   single(
@@ -366,7 +291,6 @@ const singles: ShopProduct[] = [
     "Champú restaurador",
     "Restore Shampoo · 330 ml",
     "Para cabello estropeado, seco, teñido o con mechas.",
-    LATHER,
   ),
   single(
     "restauracion",
@@ -374,7 +298,6 @@ const singles: ShopProduct[] = [
     "Mascarilla restauradora",
     "Restore Mask · 300 ml",
     "Acondiciona en profundidad el cabello estropeado, seco o teñido.",
-    MASK_10,
   ),
   single(
     "restauracion",
@@ -382,7 +305,6 @@ const singles: ShopProduct[] = [
     "Sérum restaurador",
     "Restore Serum · 100 ml",
     "Aporta brillo sin peso al cabello seco, teñido o con mechas.",
-    SERUM,
   ),
 
   single(
@@ -391,7 +313,6 @@ const singles: ShopProduct[] = [
     "Champú de volumen",
     "Volume Shampoo · 330 ml",
     "Da cuerpo al cabello fino o debilitado y ayuda a retirar el exceso de grasa.",
-    LATHER,
   ),
   single(
     "volumen",
@@ -399,7 +320,6 @@ const singles: ShopProduct[] = [
     "Champú de volumen con sal marina",
     "Volume Salt Shampoo · 300 ml",
     "Para cabello fino o con tendencia grasa. Viene en tarro.",
-    LATHER,
   ),
   single(
     "volumen",
@@ -407,7 +327,6 @@ const singles: ShopProduct[] = [
     "Mascarilla de volumen",
     "Volume Mask · 300 ml",
     "Acondiciona y da cuerpo al cabello fino o con tendencia grasa.",
-    MASK_10,
   ),
 
   single(
@@ -416,7 +335,6 @@ const singles: ShopProduct[] = [
     "Champú violeta",
     "Silver Shampoo · 330 ml",
     "Matiza los tonos dorados y anaranjados en cabello rubio, con mechas o canas.",
-    "Lava dos veces. En la segunda, deja actuar 5 minutos y aclara bien.",
   ),
   single(
     "rubios",
@@ -424,7 +342,6 @@ const singles: ShopProduct[] = [
     "Mascarilla violeta",
     "Silver Mask · 300 ml",
     "Matiza y acondiciona el cabello rubio, con mechas o canas.",
-    MASK_10,
   ),
 
   single(
@@ -433,7 +350,6 @@ const singles: ShopProduct[] = [
     "Champú para cabello teñido",
     "Colour Shampoo · 330 ml",
     "Con Chromapol, para ayudar a proteger el color. Para pelo teñido, poroso o con mechas.",
-    "Lava dos veces. En la segunda, deja actuar 2 minutos y aclara bien.",
   ),
   single(
     "color-y-brillo",
@@ -441,7 +357,6 @@ const singles: ShopProduct[] = [
     "Champú de brillo",
     "Glow Shampoo · 330 ml",
     "Antiencrespado, con extractos de algodón, rosa mosqueta y argán.",
-    LATHER,
   ),
   single(
     "color-y-brillo",
@@ -449,7 +364,6 @@ const singles: ShopProduct[] = [
     "Mascarilla de brillo",
     "Glow Mask · 300 ml",
     "Hidrata y ayuda a controlar el encrespado en cabello apagado o seco.",
-    "De medios a puntas con el pelo mojado. Deja actuar de 5 a 10 minutos y aclara bien.",
   ),
 
   single(
@@ -458,7 +372,6 @@ const singles: ShopProduct[] = [
     "Champú anticaspa",
     "Anti Dandruff Shampoo · 330 ml",
     "Con Crinipan PMC Green y extracto de uva. Limpia el cuero cabelludo y el cabello.",
-    SCALP_SHAMPOO,
   ),
   single(
     "cuero-cabelludo",
@@ -466,7 +379,6 @@ const singles: ShopProduct[] = [
     "Mascarilla anticaspa",
     "Anti Dandruff Mask · 300 ml",
     "Para el cuero cabelludo con caspa. También se puede usar en medios y puntas.",
-    SCALP_MASK,
   ),
   single(
     "cuero-cabelludo",
@@ -474,7 +386,6 @@ const singles: ShopProduct[] = [
     "Loción anticaspa",
     "Anti Dandruff Lotion · 100 ml",
     "Calma e hidrata el cuero cabelludo con caspa.",
-    SCALP_LOTION,
   ),
   single(
     "cuero-cabelludo",
@@ -482,7 +393,6 @@ const singles: ShopProduct[] = [
     "Champú para cuero cabelludo sensible",
     "Sensitive Shampoo · 330 ml",
     "Limpia con suavidad. Para todo tipo de cabello.",
-    SCALP_SHAMPOO,
   ),
   single(
     "cuero-cabelludo",
@@ -490,7 +400,6 @@ const singles: ShopProduct[] = [
     "Mascarilla para cuero cabelludo sensible",
     "Sensitive Mask · 300 ml",
     "Con pantenol y extracto de uva. También se puede usar en medios y puntas.",
-    SCALP_MASK,
   ),
   single(
     "cuero-cabelludo",
@@ -498,7 +407,6 @@ const singles: ShopProduct[] = [
     "Loción para cuero cabelludo sensible",
     "Sensitive Lotion · 100 ml",
     "Hidratante, con pantenol, manzanilla y extracto de uva.",
-    SCALP_LOTION,
   ),
   single(
     "cuero-cabelludo",
@@ -506,7 +414,6 @@ const singles: ShopProduct[] = [
     "Champú equilibrante",
     "Sweat and Microbiome Balance Shampoo · 330 ml",
     "Pensado para equilibrar el sudor y el microbioma del cuero cabelludo.",
-    SCALP_SHAMPOO,
   ),
   single(
     "cuero-cabelludo",
@@ -514,7 +421,6 @@ const singles: ShopProduct[] = [
     "Mascarilla remineralizante",
     "Remineralizing Mask · 300 ml",
     "Con niacinamida y vitaminas C y E. Ayuda a regular el exceso de grasa.",
-    SCALP_MASK,
   ),
   single(
     "cuero-cabelludo",
@@ -522,7 +428,6 @@ const singles: ShopProduct[] = [
     "Loción equilibrante",
     "Sweat and Microbiome Balance Lotion · 100 ml",
     "Con Up-Citrus, manzanilla y extracto de uva.",
-    "En el cuero cabelludo limpio, sin aclarar. O antes del lavado, dejándola al menos 20 minutos.",
   ),
 
   single(
@@ -531,7 +436,6 @@ const singles: ShopProduct[] = [
     "Concentrado de proteína",
     "Protein Concentrate · 30 ml",
     "Con colágeno y proteína de soja. Para cabello fino, quebradizo o dañado, o rizo que no se mantiene.",
-    "Solo o mezclado con otros productos. En mascarilla o acondicionador, una pipeta.",
   ),
 ];
 
@@ -559,4 +463,165 @@ export function formatCents(cents: number): string {
     style: "currency",
     currency: "EUR",
   }).format(cents / 100);
+}
+
+// ── Fotos ───────────────────────────────────────────────────────
+
+/** Productos sueltos que forman cada pack (las ampollas van aparte). */
+export const PACK_COMPONENTS: Record<string, string[]> = {
+  "pack-moisturizing-flash": ["moisturizing-shampoo-330", "moisturizing-mask-300"],
+  "pack-moisturizing-serum": ["moisturizing-shampoo-330", "moisturizing-mask-300", "moisturizing-serum-100"],
+  "pack-repair-flash": ["repair-shampoo-330", "repair-mask-300"],
+  "pack-repair-serum": ["repair-shampoo-330", "repair-mask-300", "repair-serum-100"],
+  "pack-restore-flash": ["restore-shampoo-330", "restore-mask-300"],
+  "pack-restore-serum": ["restore-shampoo-330", "restore-mask-300", "restore-serum-100"],
+  "pack-silver": ["blonde-silver-shampoo-330", "blonde-silver-mask-300"],
+  "pack-volume-flash": ["volume-shampoo-330", "volume-mask-300"],
+  "pack-volume-salt-flash": ["volume-shampoo-330", "volume-salt-shampoo-300"],
+  "pack-glow-flash": ["glow-shampoo-330", "glow-mask-300"],
+  "pack-colour-moisturizing-flash": ["colour-shampoo-330", "moisturizing-mask-300"],
+  "pack-colour-moisturizing-serum": ["colour-shampoo-330", "moisturizing-mask-300", "moisturizing-serum-100"],
+  "pack-anti-dandruff": ["anti-dandruff-shampoo-330", "anti-dandruff-mask-300", "anti-dandruff-lotion-100"],
+  "pack-sensitive": ["sensitive-shampoo-330", "sensitive-mask-300", "sensitive-lotion-100"],
+  "pack-microbiome": ["microbiome-shampoo-330", "remineralizing-mask-300", "microbiome-lotion-100"],
+};
+
+export function hasFlash(p: ShopProduct): boolean {
+  return p.contents?.includes(FLASH) ?? false;
+}
+
+/** Packs con foto navideña de K89 (el de Glow no tiene). */
+export function hasChristmasPhoto(p: ShopProduct): boolean {
+  return Boolean(p.contents) && p.slug !== "pack-glow-flash";
+}
+
+export interface ShopPhoto {
+  src: string;
+  alt: string;
+  caption: string;
+  /** true: foto de ambiente que llena el marco; false: producto sobre fondo. */
+  scene: boolean;
+}
+
+function christmasPhoto(pack: ShopProduct, caption: string): ShopPhoto {
+  return {
+    src: `/productos/navidad/${pack.slug}.jpg`,
+    alt: `${pack.name} con su caja de Navidad`,
+    caption,
+    scene: true,
+  };
+}
+
+function studioPhoto(p: ShopProduct, caption: string): ShopPhoto {
+  return { src: p.image, alt: orderName(p), caption, scene: false };
+}
+
+/** Todas las fotos de un producto. La primera es la de la tarjeta. */
+export function productPhotos(p: ShopProduct): ShopPhoto[] {
+  if (p.contents) {
+    const photos: ShopPhoto[] = [];
+    if (hasChristmasPhoto(p)) {
+      photos.push(
+        christmasPhoto(
+          p,
+          "Foto navideña de K89. El color de la caja puede variar.",
+        ),
+      );
+    }
+    photos.push(
+      studioPhoto(
+        p,
+        hasFlash(p)
+          ? "Productos del pack. Las ampollas no salen en esta imagen."
+          : "Productos del pack.",
+      ),
+    );
+    for (const slug of PACK_COMPONENTS[p.slug] ?? []) {
+      const part = findProduct(slug);
+      if (part) photos.push(studioPhoto(part, orderName(part)));
+    }
+    if (hasFlash(p)) {
+      photos.push({
+        src: "/productos/flash-repair-ampollas.jpg",
+        alt: "Ampollas Flash Repair Lotion",
+        caption:
+          "Flash Repair Lotion. La foto muestra la caja de 8 ampollas; este pack lleva 3.",
+        scene: false,
+      });
+    }
+    return photos;
+  }
+
+  const photos = [studioPhoto(p, orderName(p))];
+  const inPacks = shopProducts.filter(
+    (pack) =>
+      hasChristmasPhoto(pack) && PACK_COMPONENTS[pack.slug]?.includes(p.slug),
+  );
+  for (const pack of inPacks.slice(0, 2)) {
+    photos.push(
+      christmasPhoto(pack, `En el ${pack.name} (foto navideña de K89).`),
+    );
+  }
+  if (p.slug === "glow-shampoo-330" || p.slug === "glow-mask-300") {
+    photos.push({
+      src: "/banner/navidad-banner.jpg",
+      alt: "Línea Glow de K89",
+      caption:
+        "Línea Glow de K89. Salen formatos que no están en esta tienda.",
+      scene: true,
+    });
+  }
+  return photos;
+}
+
+export function findProduct(slug: string): ShopProduct | undefined {
+  return shopProducts.find((p) => p.slug === slug);
+}
+
+// ── Categorías de la tienda ─────────────────────────────────────
+
+export const SHOP_CATEGORIES: {
+  id: string;
+  name: string;
+  match: (p: ShopProduct) => boolean;
+}[] = [
+  { id: "todos", name: "Todos", match: () => true },
+  { id: "packs-navidad", name: "Packs Navidad", match: hasChristmasPhoto },
+  { id: "packs", name: "Todos los packs", match: (p) => Boolean(p.contents) },
+  {
+    id: "champu",
+    name: "Champú",
+    match: (p) => !p.contents && p.slug.includes("-shampoo-"),
+  },
+  {
+    id: "mascarilla",
+    name: "Mascarilla",
+    match: (p) => !p.contents && p.slug.includes("-mask-"),
+  },
+  {
+    id: "acondicionador-serum",
+    name: "Acondicionador / Sérum",
+    match: (p) => !p.contents && /-(serum|conditioner)-/.test(p.slug),
+  },
+  {
+    id: "tratamientos",
+    name: "Tratamientos / Lociones",
+    match: (p) => !p.contents && /lotion|treatment|concentrate/.test(p.slug),
+  },
+  {
+    id: "scalp-care",
+    name: "Scalp Care – Cuero cabelludo",
+    match: (p) =>
+      p.section === "cuero-cabelludo" || p.section === "packs-scalp-care",
+  },
+  { id: "curly", name: "Método Curly", match: (p) => p.section === "rizos" },
+];
+
+/** El precio más bajo entre los packs navideños, para el banner. */
+export function cheapestChristmasPack(): number {
+  return Math.min(
+    ...availableProducts()
+      .filter(hasChristmasPhoto)
+      .map((p) => p.priceCents),
+  );
 }
