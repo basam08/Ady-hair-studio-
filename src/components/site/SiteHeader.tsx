@@ -7,6 +7,7 @@ import { salon } from "@/config/salon";
 
 const NAV = [
   { href: "/servicios", label: "Servicios" },
+  { href: "/tienda", label: "Tienda" },
   { href: "/galeria", label: "Galería" },
   { href: "/contacto", label: "Contacto" },
 ];

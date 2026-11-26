@@ -1,5 +1,6 @@
 import "server-only";
 import { salon } from "@/config/salon";
+import { formatCents } from "@/config/shop";
 import { formatDateInZone, formatTimeInZone } from "@/lib/time";
 import { sendEmail } from "@/lib/integrations/email";
 import { sendWhatsApp } from "@/lib/integrations/whatsapp";
@@ -145,6 +146,66 @@ export async function notifyBookingCancelled(b: BookingLike): Promise<void> {
         })
       : Promise.resolve(),
     b.client.phone ? sendWhatsApp(b.client.phone, text) : Promise.resolve(),
+  ]);
+}
+
+interface ProductOrderLike {
+  name: string;
+  phone: string;
+  email: string | null;
+  note: string | null;
+  items: { name: string; priceCents: number; quantity: number }[];
+  totalCents: number;
+}
+
+/** Avisa al salón de una reserva de productos y, si dio email, al cliente. */
+export async function notifyProductOrder(o: ProductOrderLike): Promise<void> {
+  const lines = o.items.map(
+    (i) =>
+      `· ${i.quantity} × ${i.name} (${formatCents(i.priceCents * i.quantity)})`,
+  );
+  const total = `Total a pagar en el salón: ${formatCents(o.totalCents)}`;
+
+  const salonText = [
+    `Nueva reserva de productos en la web.`,
+    ``,
+    ...lines,
+    total,
+    ``,
+    `Cliente: ${o.name}`,
+    `Teléfono: ${o.phone}`,
+    ...(o.email ? [`Email: ${o.email}`] : []),
+    ...(o.note ? [`Nota: ${o.note}`] : []),
+    ``,
+    `Gestiónala en ${siteUrl()}/admin/pedidos`,
+  ].join("\n");
+
+  const clientText = [
+    `¡Hola ${o.name}!`,
+    ``,
+    `Hemos recibido tu reserva de productos en ${salon.name}:`,
+    ...lines,
+    total,
+    ``,
+    `No has pagado nada en la web: pagas en el salón al recogerlos.`,
+    `Dirección: ${salon.contact.address.street}, ${salon.contact.address.city}`,
+    ``,
+    `La reserva depende de la disponibilidad; si falta algo, te avisamos.`,
+  ].join("\n");
+
+  await Promise.allSettled([
+    sendEmail({
+      to: process.env.SHOP_NOTIFY_EMAIL || salon.contact.email,
+      subject: `Nueva reserva de productos · ${o.name}`,
+      text: salonText,
+    }),
+    o.email
+      ? sendEmail({
+          to: o.email,
+          subject: `Reserva de productos recibida · ${salon.name}`,
+          text: clientText,
+        })
+      : Promise.resolve(),
   ]);
 }
 

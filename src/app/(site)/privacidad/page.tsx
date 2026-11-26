@@ -24,6 +24,12 @@ export default function PrivacidadPage() {
           Al reservar: nombre, teléfono y, si lo facilitas, email. Opcionalmente
           una nota que tú escribes. No pedimos ningún dato más.
         </p>
+        <p>
+          Al reservar productos en la tienda: nombre, teléfono, los productos
+          elegidos y, si quieres, email y una nota. Usamos estos datos para
+          preparar tu reserva y avisarte sobre ella. En la web no se paga, así
+          que no pedimos datos de pago.
+        </p>
 
         <h2>Para qué los usamos</h2>
         <p>

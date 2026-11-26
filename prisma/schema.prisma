@@ -131,6 +131,29 @@ model Blackout {
   @@index([startsAt])
 }
 
+// Reserva de productos de la tienda: se paga en el salón al recogerlos.
+model ProductOrder {
+  id         String             @id @default(cuid())
+  status     ProductOrderStatus @default(PENDING)
+  name       String
+  phone      String
+  email      String?
+  note       String?
+  // Copia inmutable de lo reservado: [{ slug, name, priceCents, quantity }].
+  items      Json
+  totalCents Int
+  createdAt  DateTime           @default(now())
+  updatedAt  DateTime           @updatedAt
+
+  @@index([createdAt])
+}
+
+enum ProductOrderStatus {
+  PENDING
+  PICKED_UP
+  CANCELLED
+}
+
 enum BookingStatus {
   CONFIRMED
   CANCELLED

@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { isValidDateKey } from "@/lib/time";
+import { MAX_UNITS_PER_PRODUCT } from "@/config/shop";
 
 // Teléfono: opcional. Si se rellena, permisivo pero acotado (formato
 // internacional o nacional).
@@ -88,6 +89,43 @@ export const vipClientCreateSchema = z.object({
     .or(z.literal("")),
   phone: z.string().trim().max(20).optional().or(z.literal("")),
   notes: z.string().trim().max(500).optional().or(z.literal("")),
+});
+
+export const productOrderCreateSchema = z.object({
+  items: z
+    .array(
+      z.object({
+        slug: z.string().trim().min(1).max(64),
+        quantity: z.number().int().min(1).max(MAX_UNITS_PER_PRODUCT),
+      }),
+    )
+    .min(1, "Elige al menos un producto")
+    .max(30)
+    .refine(
+      (items) => new Set(items.map((i) => i.slug)).size === items.length,
+      "Hay productos repetidos",
+    ),
+  name: z.string().trim().min(2, "Escribe tu nombre").max(80),
+  // Aquí el teléfono sí es obligatorio: es la forma de avisar al cliente.
+  phone: z
+    .string()
+    .trim()
+    .regex(/^\+?[0-9\s().-]{6,20}$/, "Escribe un teléfono válido"),
+  email: z
+    .string()
+    .trim()
+    .max(120)
+    .email("Email no válido")
+    .optional()
+    .or(z.literal("")),
+  note: z.string().trim().max(500).optional().or(z.literal("")),
+  consent: z.literal(true, {
+    errorMap: () => ({ message: "Debes aceptar la política de privacidad" }),
+  }),
+});
+
+export const productOrderStatusSchema = z.object({
+  status: z.enum(["PENDING", "PICKED_UP", "CANCELLED"]),
 });
 
 export const adminBookingCreateSchema = z.object({

@@ -7,6 +7,7 @@ const LINKS = [
   { href: "/admin", label: "Panel" },
   { href: "/admin/reservas", label: "Reservas" },
   { href: "/admin/calendario", label: "Calendario" },
+  { href: "/admin/pedidos", label: "Pedidos" },
   { href: "/admin/disponibilidad", label: "Disponibilidad" },
   { href: "/admin/clientes", label: "Clientes" },
   { href: "/admin/vip", label: "VIP" },
@@ -29,7 +30,7 @@ export function AdminNav({ name }: { name: string }) {
           <span className="font-display text-xl">
             Ady<span className="text-persimmon">.</span> panel
           </span>
-          <nav className="flex gap-4">
+          <nav className="flex flex-wrap gap-4">
             {LINKS.map((l) => {
               const active =
                 l.href === "/admin"
