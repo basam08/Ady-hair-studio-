@@ -33,7 +33,7 @@ const FAQS = [
   },
   {
     q: "¿Cuál es el horario del salón?",
-    a: "Martes a viernes de 10:00 a 20:00, sábados de 10:00 a 14:00. Lunes y festivos, cerrado.",
+    a: "Martes a sábado de 10:00 a 14:00 y de 15:00 a 20:00. Lunes, domingos y festivos, cerrado.",
   },
 ] as const;
 
@@ -41,7 +41,7 @@ const STEPS = [
   {
     n: "01",
     title: "Elige el servicio",
-    body: "Corte, color, barbería o peinado. Cada uno con su precio y su duración exactos.",
+    body: "Corte, color, barbería o peinado. Cada uno con su precio y su duración.",
   },
   {
     n: "02",
@@ -129,7 +129,10 @@ export default function HomePage() {
                   </p>
                 </div>
                 <div className="text-right">
-                  <p className="u-mono text-lg">{formatPrice(s.price)}</p>
+                  <p className="u-mono text-lg">
+                    {s.priceFrom ? "Desde " : ""}
+                    {formatPrice(s.price)}
+                  </p>
                   <p className="u-mono text-xs text-cocoa">
                     {formatDuration(s.durationMin)}
                   </p>

@@ -238,6 +238,8 @@ export function BookingWizard({
     () => allItems.reduce((sum, i) => sum + i.priceCents, 0),
     [allItems],
   );
+  // Si algo de lo elegido es "Desde", la suma también lo es.
+  const totalPriceFrom = allItems.some((i) => i.priceFrom);
   const totalDurationMin = useMemo(
     () => allItems.reduce((sum, i) => sum + i.durationMin, 0),
     [allItems],
@@ -652,9 +654,10 @@ export function BookingWizard({
           {selectedServices.length > 0 && (
             <div className="sticky bottom-4 mt-2 flex flex-wrap items-center justify-between gap-3 border border-ink bg-cream px-5 py-4 shadow-md">
               <span className="u-mono text-sm">
-                {servicesLabel} · {formatPriceCents(
-                  selectedServices.reduce((s, i) => s + i.priceCents, 0),
-                )}{" "}
+                {servicesLabel} · {priceLabel({
+                  priceCents: selectedServices.reduce((s, i) => s + i.priceCents, 0),
+                  priceFrom: selectedServices.some((i) => i.priceFrom),
+                })}{" "}
                 ·{" "}
                 {formatDuration(
                   selectedServices.reduce((s, i) => s + i.durationMin, 0),
@@ -676,6 +679,7 @@ export function BookingWizard({
           <SelectedService
             name={servicesLabel}
             priceCents={selectedServices.reduce((s, i) => s + i.priceCents, 0)}
+            priceFrom={selectedServices.some((i) => i.priceFrom)}
             durationMin={selectedServices.reduce((s, i) => s + i.durationMin, 0)}
             onChange={() => setStep(3)}
           />
@@ -722,7 +726,7 @@ export function BookingWizard({
             </div>
             <div className="mt-6 flex flex-wrap items-center justify-between gap-3 border border-ink bg-cream px-5 py-4">
               <span className="u-mono text-sm">
-                Total: {formatPriceCents(totalPriceCents)} ·{" "}
+                Total: {priceLabel({ priceCents: totalPriceCents, priceFrom: totalPriceFrom })} ·{" "}
                 {formatDuration(totalDurationMin)}
               </span>
               <button
@@ -752,6 +756,7 @@ export function BookingWizard({
           <SelectedService
             name={combinedName}
             priceCents={totalPriceCents}
+            priceFrom={totalPriceFrom}
             durationMin={totalDurationMin}
             onChange={() => setStep(3)}
           />
@@ -847,6 +852,7 @@ export function BookingWizard({
           <SelectedService
             name={combinedName}
             priceCents={totalPriceCents}
+            priceFrom={totalPriceFrom}
             durationMin={totalDurationMin}
             onChange={() => setStep(3)}
           />
@@ -916,7 +922,7 @@ export function BookingWizard({
                 hour: "2-digit",
                 minute: "2-digit",
               })}{" "}
-              · {formatPriceCents(totalPriceCents)} ·{" "}
+              · {priceLabel({ priceCents: totalPriceCents, priceFrom: totalPriceFrom })} ·{" "}
               {formatDuration(totalDurationMin)}
             </p>
           </div>
@@ -1038,18 +1044,20 @@ function SelectedGender({
 function SelectedService({
   name,
   priceCents,
+  priceFrom,
   durationMin,
   onChange,
 }: {
   name: string;
   priceCents: number;
+  priceFrom: boolean;
   durationMin: number;
   onChange: () => void;
 }) {
   return (
     <div className="mt-2 flex items-center justify-between border border-line bg-cream px-4 py-3">
       <span className="u-mono text-sm">
-        {name} · {formatPriceCents(priceCents)} ·{" "}
+        {name} · {priceLabel({ priceCents, priceFrom })} ·{" "}
         {formatDuration(durationMin)}
       </span>
       <button
