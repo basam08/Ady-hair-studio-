@@ -5,6 +5,7 @@ import { useState } from "react";
 import { formatCents, orderName } from "@/config/shop";
 import { useShop } from "@/components/shop/CartProvider";
 import { Stepper } from "@/components/shop/CartControls";
+import { PICKUP_NOTICE } from "@/lib/product-orders";
 
 export function ReservationClient() {
   const {
@@ -62,6 +63,9 @@ export function ReservationClient() {
         <p className="mt-3 max-w-md text-sm text-cocoa">
           Pagarás {formatCents(doneTotal)} en el salón al recoger tus productos.
           La reserva depende de la disponibilidad; si falta algo, te avisamos.
+        </p>
+        <p className="mt-3 max-w-md text-sm font-semibold">
+          Te escribiremos para confirmarla. {PICKUP_NOTICE}
         </p>
         <Link href="/tienda" className="btn btn-ghost mt-6">
           Volver a la tienda
@@ -171,6 +175,9 @@ export function ReservationClient() {
             {error}
           </p>
         )}
+        <p className="border border-line bg-cream p-3 text-sm">
+          {PICKUP_NOTICE}
+        </p>
         <button
           type="submit"
           disabled={sending}

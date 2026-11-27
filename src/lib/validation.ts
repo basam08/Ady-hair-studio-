@@ -124,8 +124,17 @@ export const productOrderCreateSchema = z.object({
   }),
 });
 
-export const productOrderStatusSchema = z.object({
-  status: z.enum(["PENDING", "PICKED_UP", "CANCELLED"]),
+export const productOrderActionSchema = z.object({
+  action: z.enum([
+    "confirm",
+    "order",
+    "ready",
+    "unready",
+    "extend",
+    "pickup",
+    "cancel",
+    "reopen",
+  ]),
 });
 
 export const adminBookingCreateSchema = z.object({

@@ -3,6 +3,7 @@ import { getDashboardStats } from "@/lib/stats";
 import { formatPriceCents, salon } from "@/config/salon";
 import { formatTimeInZone } from "@/lib/time";
 import { prisma } from "@/lib/db";
+import { PedidosResumen } from "@/components/admin/PedidosResumen";
 
 export const dynamic = "force-dynamic";
 
@@ -68,6 +69,8 @@ export default async function AdminDashboard() {
           hint="este mes"
         />
       </div>
+
+      <PedidosResumen />
 
       <div className="mt-10 grid gap-8 lg:grid-cols-[1.4fr_1fr]">
         <section>

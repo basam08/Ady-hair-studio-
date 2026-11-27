@@ -12,6 +12,7 @@ import {
 } from "@/config/shop";
 import { salon } from "@/config/salon";
 import { useShop } from "@/components/shop/CartProvider";
+import { PICKUP_NOTICE } from "@/lib/product-orders";
 
 /** Minúsculas y sin acentos, para que "serum" encuentre "Sérum". */
 const normalize = (s: string) =>
@@ -50,6 +51,7 @@ export function ShopClient() {
               En la web no se paga: pagas en el local.
             </strong>
           </p>
+          <p className="mt-1 max-w-xl text-sm text-cocoa">{PICKUP_NOTICE}</p>
         </div>
         <label className="block md:w-72">
           <span className="sr-only">Buscar productos</span>

@@ -1,6 +1,7 @@
 import "server-only";
 import { salon } from "@/config/salon";
 import { formatCents } from "@/config/shop";
+import { PICKUP_NOTICE } from "@/lib/product-orders";
 import { formatDateInZone, formatTimeInZone } from "@/lib/time";
 import { sendEmail } from "@/lib/integrations/email";
 import { sendWhatsApp } from "@/lib/integrations/whatsapp";
@@ -191,6 +192,7 @@ export async function notifyProductOrder(o: ProductOrderLike): Promise<void> {
     `Dirección: ${salon.contact.address.street}, ${salon.contact.address.city}`,
     ``,
     `La reserva depende de la disponibilidad; si falta algo, te avisamos.`,
+    `Te escribiremos para confirmarla. ${PICKUP_NOTICE}`,
   ].join("\n");
 
   await Promise.allSettled([

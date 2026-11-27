@@ -9,6 +9,7 @@ import {
 import { salon } from "@/config/salon";
 import { useShop } from "@/components/shop/CartProvider";
 import { Stepper } from "@/components/shop/CartControls";
+import { PICKUP_NOTICE } from "@/lib/product-orders";
 
 /** Precio y botón de reserva de la ficha. */
 export function ProductActions({ slug }: { slug: string }) {
@@ -41,6 +42,7 @@ export function ProductActions({ slug }: { slug: string }) {
       <p className="mt-1 text-sm text-cocoa">
         Se paga en el salón al recogerlo.
       </p>
+      <p className="mt-2 text-sm text-cocoa">{PICKUP_NOTICE}</p>
       {quantity === 0 ? (
         <button
           type="button"

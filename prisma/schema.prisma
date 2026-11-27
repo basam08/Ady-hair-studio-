@@ -144,6 +144,14 @@ model ProductOrder {
   totalCents Int
   createdAt  DateTime           @default(now())
   updatedAt  DateTime           @updatedAt
+  // Fecha de cada paso. La caducidad se calcula (lib/product-orders.ts):
+  // corre desde readyAt, o desde extendedAt si se dio más plazo.
+  confirmedAt DateTime?
+  orderedAt   DateTime?
+  readyAt     DateTime?
+  extendedAt  DateTime?
+  pickedUpAt  DateTime?
+  cancelledAt DateTime?
 
   @@index([createdAt])
 }
